@@ -281,6 +281,17 @@ function sc(model, domain) {
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
+async function getDbName() {
+  try {
+    const r = await fetch('/odoo/dbname');
+    const j = await r.json();
+    const dbs = j.result || [];
+    if (dbs.length > 0) return dbs[0];
+  } catch(e) {}
+  // fallback: derive from hostname
+  return 'alsweer-staging-2-32438275';
+}
+
 async function doLogin() {
   const email = document.getElementById('li-email').value.trim();
   const pass  = document.getElementById('li-pass').value;
@@ -289,9 +300,16 @@ async function doLogin() {
   const err   = document.getElementById('li-err');
   err.style.display = 'none';
   if (!email||!pass) { showErr2('Please enter your email and password.'); return; }
-  btn.disabled=true; txt.textContent='Signing in…';
+  btn.disabled=true; txt.textContent='Connecting…';
   try {
-    const res = await rpc('/web/session/authenticate', {db:'', login:email, password:pass});
+    // Step 1: get the correct database name
+    txt.textContent='Getting database…';
+    const db = await getDbName();
+    console.log('Using DB:', db);
+
+    // Step 2: authenticate
+    txt.textContent='Signing in…';
+    const res = await rpc('/web/session/authenticate', {db, login:email, password:pass});
     if (!res?.uid) throw new Error('Invalid credentials. Please check and try again.');
     SESSION = {uid:res.uid, name:res.name||email};
     document.getElementById('user-pill').textContent = SESSION.name;
