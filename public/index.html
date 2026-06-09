@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Al Sweer Sales Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#111827;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:5px}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)}
+.login-box{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.22)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-icon{width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
+.login-box h1{font-size:22px;font-weight:700;color:#111827;text-align:center}
+.login-box p{font-size:13px;color:#6b7280;text-align:center;margin-top:4px}
+.fgroup{margin-bottom:14px}
+.fgroup label{display:block;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.finput{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#111827;outline:none;font-family:inherit;transition:border-color .2s}
+.finput:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.finput:read-only{background:#f9fafb;color:#6b7280}
+.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s}
+.btn-primary:hover{opacity:.92}.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.login-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px;display:none}
+.login-note{font-size:11px;color:#9ca3af;text-align:center;margin-top:14px}
+
+/* APP */
+#app{display:none}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tl{display:flex;align-items:center;gap:10px}
+.tl-icon{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.tl-title{font-weight:700;font-size:16px;color:#111827}
+.tl-sub{font-size:11px;color:#9ca3af}
+.tr{display:flex;align-items:center;gap:10px}
+.user-pill{background:#f3f4f6;padding:5px 12px;border-radius:20px;font-size:12px;color:#374151;font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%}
+.st{font-size:12px;font-weight:600}
+.btn-sm{padding:6px 14px;background:transparent;border:1px solid #e5e7eb;border-radius:7px;font-size:12px;color:#6b7280;cursor:pointer}
+.btn-sm:hover{background:#f9fafb}
+
+.main{max-width:1400px;margin:0 auto;padding:20px 24px}
+
+/* FILTERS */
+.fbar{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.fg{display:flex;flex-direction:column;gap:5px}
+.flabel{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.07em}
+.fdate{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;color:#111827;background:#fff;outline:none;font-family:inherit}
+.fdate:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.btn-apply{padding:9px 22px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.btn-apply:hover{background:#4f46e5}.btn-apply:disabled{background:#a5b4fc;cursor:not-allowed}
+.btn-ghost{padding:9px 16px;background:transparent;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;color:#6b7280;cursor:pointer}
+.btn-ghost:hover{background:#f9fafb}
+.fcnt{font-size:12px;color:#6b7280}
+
+/* SEARCHABLE SELECT */
+.ss-wrap{position:relative;min-width:220px;max-width:340px}
+.ss-trigger{padding:8px 32px 8px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;color:#111827;background:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;position:relative;transition:border-color .15s}
+.ss-trigger.ph{color:#9ca3af}
+.ss-trigger.open{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.ss-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:10px;pointer-events:none}
+.ss-drop{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.13);z-index:500;width:max-content;min-width:100%;max-width:440px;display:none}
+.ss-search{padding:8px 8px 4px}
+.ss-search input{width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;outline:none;font-family:inherit;color:#111827}
+.ss-search input:focus{border-color:#6366f1}
+.ss-list{max-height:240px;overflow-y:auto}
+.ss-item{padding:9px 13px;font-size:13px;cursor:pointer;color:#111827;line-height:1.4}
+.ss-item:hover{background:#f9fafb}
+.ss-item.sel{background:#eff6ff;color:#2563eb;font-weight:600}
+.ss-empty{padding:12px;text-align:center;font-size:12px;color:#9ca3af}
+
+/* LOADING */
+#loading{display:none;text-align:center;padding:80px 20px}
+.spinner{width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{display:inline-flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px}
+.step{font-size:13px;color:#d1d5db;display:flex;align-items:center;gap:8px}
+.step.active{color:#111827;font-weight:600}.step.done{color:#10b981}
+
+/* ERROR */
+#err-bar{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:13px;color:#991b1b;align-items:center;gap:8px}
+#err-bar button{margin-left:auto;background:none;border:none;color:#6366f1;cursor:pointer;font-weight:600;font-size:13px}
+
+/* IDLE */
+#idle{text-align:center;padding:100px 20px}
+.idle-icon{font-size:56px;margin-bottom:14px}
+.idle-title{font-size:18px;font-weight:600;color:#111827;margin-bottom:6px}
+.idle-sub{font-size:13px;color:#6b7280}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start}
+.kpi-lbl{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em}
+.kpi-val{font-size:28px;font-weight:700;color:#111827;margin:5px 0 3px;line-height:1}
+.kpi-sub{font-size:11px;color:#9ca3af}
+.kpi-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+
+/* CHARTS */
+.crow{display:grid;gap:14px;margin-bottom:14px}
+.crow.r21{grid-template-columns:2fr 1fr}
+.crow.r11{grid-template-columns:1fr 1fr}
+.ccard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.chead{padding:13px 18px;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center}
+.ctitle{font-weight:600;font-size:14px;color:#111827}
+.csub{font-size:11px;color:#9ca3af}
+.cbody{padding:16px 18px}
+.cbody canvas{max-height:230px}
+
+/* TABLES */
+.trow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.tcard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.thead2{padding:13px 18px;border-bottom:1px solid #f3f4f6;font-weight:600;font-size:14px;color:#111827}
+.tscroll{max-height:280px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:8px 13px;text-align:left;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #f3f4f6;background:#fafafa;position:sticky;top:0;z-index:1}
+td{padding:10px 13px;border-bottom:1px solid #f9fafb;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.bs{background:#d1fae5;color:#065f46}.bd{background:#dbeafe;color:#1e40af}
+.rk{color:#d1d5db;font-size:10px;font-weight:700;max-width:28px}
+.rv{font-weight:600;color:#6366f1}.rvg{font-weight:600;color:#10b981}
+.on{font-weight:700;color:#6366f1}
+
+/* RECENT */
+.rcard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:24px}
+.rscroll{overflow-x:auto}
+
+.empty{height:150px;display:flex;align-items:center;justify-content:center;color:#d1d5db;font-size:13px;flex-direction:column;gap:6px}
+
+@media(max-width:900px){.crow.r21,.crow.r11,.trow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-icon">📊</div>
+      <h1>Al Sweer Sales Dashboard</h1>
+      <p>Sign in with your Odoo credentials</p>
+    </div>
+    <div class="fgroup">
+      <label>Odoo Server</label>
+      <input class="finput" value="alsweer-staging-2-32438275.dev.odoo.com" readonly/>
+    </div>
+    <div class="fgroup">
+      <label>Email</label>
+      <input class="finput" id="li-email" type="email" placeholder="your@email.com" autocomplete="email"/>
+    </div>
+    <div class="fgroup">
+      <label>Password</label>
+      <input class="finput" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" id="li-btn" onclick="doLogin()">
+      <span id="li-txt">Sign In →</span>
+    </button>
+    <div class="login-err" id="li-err"></div>
+    <p class="login-note">Use the same credentials you use to log into Odoo</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tl">
+      <div class="tl-icon">📊</div>
+      <span class="tl-title">Sales Dashboard</span>
+      <span class="tl-sub">Al Sweer Group · Live</span>
+    </div>
+    <div class="tr">
+      <span class="user-pill" id="user-pill"></span>
+      <span class="dot" id="st-dot" style="background:#d1d5db"></span>
+      <span class="st" id="st-txt" style="color:#9ca3af">Ready</span>
+      <button class="btn-sm" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- FILTER BAR -->
+    <div class="fbar">
+      <div class="fg">
+        <span class="flabel">Company</span>
+        <div class="ss-wrap" id="ss-co">
+          <div class="ss-trigger ph" id="ss-co-t" onclick="toggleSS('co')">All Companies<span class="ss-arrow">▼</span></div>
+          <div class="ss-drop" id="ss-co-d">
+            <div class="ss-search"><input id="ss-co-q" placeholder="Search company…" oninput="filterSS('co')" onclick="event.stopPropagation()"/></div>
+            <div class="ss-list" id="ss-co-l"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <span class="flabel">Date From</span>
+        <input class="fdate" type="date" id="f-from" value="2026-01-01"/>
+      </div>
+      <div class="fg">
+        <span class="flabel">Date To</span>
+        <input class="fdate" type="date" id="f-to"/>
+      </div>
+      <div class="fg">
+        <span class="flabel">Salesperson</span>
+        <div class="ss-wrap" id="ss-sp">
+          <div class="ss-trigger ph" id="ss-sp-t" onclick="toggleSS('sp')">All Salespeople<span class="ss-arrow">▼</span></div>
+          <div class="ss-drop" id="ss-sp-d">
+            <div class="ss-search"><input id="ss-sp-q" placeholder="Search salesperson…" oninput="filterSS('sp')" onclick="event.stopPropagation()"/></div>
+            <div class="ss-list" id="ss-sp-l"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fg" style="flex-direction:row;gap:8px;align-items:flex-end">
+        <button class="btn-apply" id="btn-apply" onclick="applyFilters()">🔍 Apply Filters</button>
+        <button class="btn-ghost" onclick="resetFilters()">Reset</button>
+        <span class="fcnt" id="fcnt"></span>
+      </div>
+    </div>
+
+    <div id="err-bar">⚠️ <span id="err-msg"></span><button onclick="applyFilters()">Retry</button></div>
+
+    <div id="idle"><div class="idle-icon">📊</div><div class="idle-title">Al Sweer Sales Dashboard</div><div class="idle-sub">Select your filters and click <strong>Apply Filters</strong> to load live data.</div></div>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <p style="font-size:15px;font-weight:600;color:#111827;margin-bottom:14px">Fetching data from Odoo…</p>
+      <div class="steps">
+        <div class="step" id="s0">○ Connecting to Odoo</div>
+        <div class="step" id="s1">○ Fetching sales orders</div>
+        <div class="step" id="s2">○ Processing data</div>
+        <div class="step" id="s3">○ Building charts</div>
+      </div>
+    </div>
+
+    <div id="dash" style="display:none">
+      <div class="kpi-grid" id="kpis"></div>
+      <div class="crow r21">
+        <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Month</span><span class="csub" id="month-sub"></span></div><div class="cbody"><canvas id="ch-month"></canvas></div></div>
+        <div class="ccard"><div class="chead"><span class="ctitle">Order Status</span></div><div class="cbody"><canvas id="ch-status"></canvas></div></div>
+      </div>
+      <div class="crow r11">
+        <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Company</span></div><div class="cbody"><canvas id="ch-co"></canvas></div></div>
+        <div class="ccard"><div class="chead"><span class="ctitle">Top Salespeople</span></div><div class="cbody"><canvas id="ch-sp"></canvas></div></div>
+      </div>
+      <div class="trow">
+        <div class="tcard"><div class="thead2">Salesperson Performance</div><div class="tscroll"><table><thead><tr><th>#</th><th>Name</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-sp"></tbody></table></div></div>
+        <div class="tcard"><div class="thead2">Revenue by Company</div><div class="tscroll"><table><thead><tr><th>#</th><th>Company</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-co"></tbody></table></div></div>
+      </div>
+      <div class="rcard">
+        <div class="chead"><span class="ctitle">Recent Orders</span><span class="csub" id="rec-sub"></span></div>
+        <div class="rscroll"><table><thead><tr><th>Order</th><th>Customer</th><th>Company</th><th>Salesperson</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody id="t-rec"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ───────────────────────────────────────────────────
+let SESSION = {uid:null, name:''};
+let COS = [{id:0,name:'All Companies'}];
+let SPS = [{id:0,name:'All Salespeople'}];
+let selCo = 0, selSp = 0;
+let CH = {};
+
+// ── RPC via proxy ────────────────────────────────────────────
+async function rpc(path, params) {
+  const r = await fetch('/odoo' + path, {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({jsonrpc:'2.0',method:'call',id:1,params})
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.data?.message || j.error.message || 'Odoo error');
+  return j.result;
+}
+function sr(model, domain, fields, limit=500, order='') {
+  return rpc('/web/dataset/call_kw', {model, method:'search_read', args:[], kwargs:{domain, fields, limit, order}});
+}
+function sc(model, domain) {
+  return rpc('/web/dataset/call_kw', {model, method:'search_count', args:[domain], kwargs:{}});
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const pass  = document.getElementById('li-pass').value;
+  const btn   = document.getElementById('li-btn');
+  const txt   = document.getElementById('li-txt');
+  const err   = document.getElementById('li-err');
+  err.style.display = 'none';
+  if (!email||!pass) { showErr2('Please enter your email and password.'); return; }
+  btn.disabled=true; txt.textContent='Signing in…';
+  try {
+    const res = await rpc('/web/session/authenticate', {db:'', login:email, password:pass});
+    if (!res?.uid) throw new Error('Invalid credentials. Please check and try again.');
+    SESSION = {uid:res.uid, name:res.name||email};
+    document.getElementById('user-pill').textContent = SESSION.name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('f-to').value = new Date().toISOString().split('T')[0];
+    await loadLookups();
+  } catch(e) {
+    showErr2(e.message||'Login failed');
+  } finally { btn.disabled=false; txt.textContent='Sign In →'; }
+}
+function showErr2(m) { const e=document.getElementById('li-err'); e.textContent=m; e.style.display='block'; }
+document.getElementById('li-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  rpc('/web/session/destroy',{}).catch(()=>{});
+  SESSION={uid:null,name:''};
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('li-pass').value='';
+  document.getElementById('dash').style.display='none';
+  document.getElementById('idle').style.display='block';
+}
+
+// ── LOAD LOOKUPS ─────────────────────────────────────────────
+async function loadLookups() {
+  try {
+    const [cos, sps] = await Promise.all([
+      sr('res.company', [], ['id','name'], 100, 'name asc'),
+      sr('res.users', [['active','=',true],['share','=',false]], ['id','name'], 200, 'name asc')
+    ]);
+    COS = [{id:0,name:'All Companies'}, ...cos.map(c=>({id:c.id,name:c.name}))];
+    SPS = [{id:0,name:'All Salespeople'}, ...sps.map(s=>({id:s.id,name:s.name}))];
+    buildSSList('co', COS);
+    buildSSList('sp', SPS);
+  } catch(e) { console.error('Lookup error', e); }
+}
+
+// ── SEARCHABLE SELECT ─────────────────────────────────────────
+function buildSSList(key, items) { renderSSList(key, items); }
+
+function renderSSList(key, items) {
+  const el = document.getElementById(`ss-${key}-l`);
+  const cur = key==='co'?selCo:selSp;
+  el.innerHTML = items.length===0
+    ? '<div class="ss-empty">No results</div>'
+    : items.map(it=>`<div class="ss-item${it.id===cur?' sel':''}" onclick="pickSS('${key}',${it.id},'${it.name.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}')">${it.name}</div>`).join('');
+}
+
+function filterSS(key) {
+  const q = document.getElementById(`ss-${key}-q`).value.toLowerCase();
+  const src = key==='co'?COS:SPS;
+  renderSSList(key, q?src.filter(x=>x.name.toLowerCase().includes(q)):src);
+}
+
+function pickSS(key, id, name) {
+  if(key==='co') selCo=id; else selSp=id;
+  const t = document.getElementById(`ss-${key}-t`);
+  t.innerHTML = name+'<span class="ss-arrow">▼</span>';
+  t.className = 'ss-trigger' + (id===0?' ph':'');
+  document.getElementById(`ss-${key}-d`).style.display='none';
+  t.classList.remove('open');
+  renderSSList(key, key==='co'?COS:SPS);
+}
+
+function toggleSS(key) {
+  const d=document.getElementById(`ss-${key}-d`);
+  const t=document.getElementById(`ss-${key}-t`);
+  const open = d.style.display!=='none';
+  ['co','sp'].forEach(k=>{
+    document.getElementById(`ss-${k}-d`).style.display='none';
+    document.getElementById(`ss-${k}-t`).classList.remove('open');
+    document.getElementById(`ss-${k}-q`).value='';
+    filterSS(k);
+  });
+  if(!open){ d.style.display='block'; t.classList.add('open'); setTimeout(()=>document.getElementById(`ss-${key}-q`).focus(),40); }
+}
+
+document.addEventListener('mousedown', e=>{
+  ['co','sp'].forEach(k=>{
+    const w=document.getElementById(`ss-${k}`);
+    if(w&&!w.contains(e.target)){
+      document.getElementById(`ss-${k}-d`).style.display='none';
+      document.getElementById(`ss-${k}-t`).classList.remove('open');
+    }
+  });
+});
+
+function resetFilters() {
+  selCo=0; selSp=0;
+  ['co','sp'].forEach(k=>{
+    const t=document.getElementById(`ss-${k}-t`);
+    t.innerHTML=(k==='co'?'All Companies':'All Salespeople')+'<span class="ss-arrow">▼</span>';
+    t.className='ss-trigger ph';
+    renderSSList(k,k==='co'?COS:SPS);
+  });
+  document.getElementById('f-from').value='2026-01-01';
+  document.getElementById('f-to').value=new Date().toISOString().split('T')[0];
+  document.getElementById('dash').style.display='none';
+  document.getElementById('idle').style.display='block';
+  document.getElementById('fcnt').textContent='';
+  setSt('ready');
+}
+
+// ── STEP ANIMATION ────────────────────────────────────────────
+let stTimers=[];
+const STEP_LABELS = ['Connecting to Odoo','Fetching sales orders','Processing data','Building charts'];
+function startSteps() {
+  stTimers.forEach(clearTimeout);
+  STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step'; e.textContent=`○ ${STEP_LABELS[i]}`; });
+  stTimers = STEP_LABELS.map((_,i)=>setTimeout(()=>{
+    if(i>0){ const p=document.getElementById(`s${i-1}`); p.className='step done'; p.textContent=`✓ ${STEP_LABELS[i-1]}`; }
+    const c=document.getElementById(`s${i}`); c.className='step active'; c.textContent=`→ ${STEP_LABELS[i]}`;
+  }, i*1600));
+}
+
+// ── APPLY FILTERS ─────────────────────────────────────────────
+async function applyFilters() {
+  const from = document.getElementById('f-from').value;
+  const to   = document.getElementById('f-to').value;
+  document.getElementById('idle').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('dash').style.display='none';
+  document.getElementById('err-bar').style.display='none';
+  document.getElementById('btn-apply').disabled=true;
+  setSt('loading');
+  startSteps();
+
+  try {
+    const domain=[['state','in',['sale','done']]];
+    if(selCo)   domain.push(['company_id','=',selCo]);
+    if(selSp)   domain.push(['user_id','=',selSp]);
+    if(from)    domain.push(['date_order','>=',from+' 00:00:00']);
+    if(to)      domain.push(['date_order','<=',to+' 23:59:59']);
+
+    const fields=['name','company_id','user_id','date_order','amount_untaxed','amount_total','currency_id','state','partner_id'];
+
+    // Two fetches: oldest 500 + newest 500 for better coverage
+    const [asc, desc, total] = await Promise.all([
+      sr('sale.order', domain, fields, 500, 'id asc'),
+      sr('sale.order', domain, fields, 500, 'id desc'),
+      sc('sale.order', domain),
+    ]);
+
+    const seen=new Set();
+    const orders=[...asc,...desc].filter(o=>seen.has(o.id)?false:(seen.add(o.id),true));
+
+    stTimers.forEach(clearTimeout);
+    STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step done'; e.textContent=`✓ ${STEP_LABELS[i]}`; });
+
+    document.getElementById('fcnt').textContent = `${total.toLocaleString()} total orders`;
+    render(orders, total, from, to);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('dash').style.display='block';
+    setSt('live', orders.length, total);
+  } catch(e) {
+    stTimers.forEach(clearTimeout);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('err-bar').style.display='flex';
+    document.getElementById('err-msg').textContent = e.message||'Failed to load data';
+    setSt('error');
+  } finally { document.getElementById('btn-apply').disabled=false; }
+}
+
+function setSt(state, shown, total) {
+  const d=document.getElementById('st-dot'), t=document.getElementById('st-txt');
+  if(state==='loading'){d.style.background='#f59e0b';t.style.color='#f59e0b';t.textContent='Fetching…';}
+  else if(state==='live'){d.style.background='#10b981';t.style.color='#10b981';t.textContent=`Live · ${shown} shown of ${(total||shown).toLocaleString()}`;}
+  else if(state==='error'){d.style.background='#ef4444';t.style.color='#ef4444';t.textContent='Error';}
+  else{d.style.background='#d1d5db';t.style.color='#9ca3af';t.textContent='Ready';}
+}
+
+// ── FORMAT ────────────────────────────────────────────────────
+function fmt(n){
+  if(n==null||isNaN(n))return'—';
+  if(n>=1e9)return(n/1e9).toFixed(2)+'B';
+  if(n>=1e6)return(n/1e6).toFixed(1)+'M';
+  if(n>=1e3)return(n/1e3).toFixed(1)+'K';
+  return Math.round(n).toLocaleString();
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function render(orders, total, from, to) {
+  const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let rev=0, sale=0, done=0;
+  const custs=new Set(), byM={}, byCo={}, bySP={};
+
+  for(const o of orders){
+    const amt=parseFloat(o.amount_untaxed)||0;
+    rev+=amt;
+    const pid=Array.isArray(o.partner_id)?o.partner_id[0]:o.partner_id;
+    if(pid)custs.add(pid);
+    o.state==='sale'?sale++:done++;
+    const d=new Date(o.date_order);
+    const mk=MO[d.getMonth()]+' '+d.getFullYear(), ms=d.getFullYear()*100+d.getMonth();
+    if(!byM[mk])byM[mk]={m:mk,s:ms,r:0,c:0}; byM[mk].r+=amt; byM[mk].c++;
+    const cn=Array.isArray(o.company_id)?o.company_id[1]:'?';
+    if(!byCo[cn])byCo[cn]={n:cn,r:0,c:0}; byCo[cn].r+=amt; byCo[cn].c++;
+    const sp=Array.isArray(o.user_id)?o.user_id[1]:'Unassigned';
+    if(!bySP[sp])bySP[sp]={n:sp,r:0,c:0}; bySP[sp].r+=amt; bySP[sp].c++;
+  }
+
+  const months=Object.values(byM).sort((a,b)=>a.s-b.s);
+  const coList=Object.values(byCo).sort((a,b)=>b.r-a.r).slice(0,10);
+  const spList=Object.values(bySP).sort((a,b)=>b.r-a.r).slice(0,10);
+  const recent=[...orders].sort((a,b)=>new Date(b.date_order)-new Date(a.date_order)).slice(0,50);
+
+  const note = total>orders.length?` (showing ${orders.length} of ${total.toLocaleString()})`:` (${orders.length} orders)`;
+  document.getElementById('month-sub').textContent = from+' → '+to+note;
+  document.getElementById('rec-sub').textContent = `Latest ${recent.length}`;
+
+  // KPIs
+  const C4=['#6366f1','#10b981','#f59e0b','#8b5cf6'];
+  const IC=['💰','📦','📈','👥'];
+  const KD=[
+    {l:'Total Revenue',   v:fmt(rev),                               s:'Confirmed + Done'},
+    {l:'Total Orders',    v:total.toLocaleString(),                  s:'All matched orders'},
+    {l:'Avg Order Value', v:fmt(orders.length?rev/orders.length:0),  s:'Per order'},
+    {l:'Unique Customers',v:custs.size.toLocaleString(),             s:'In period'},
+  ];
+  document.getElementById('kpis').innerHTML = KD.map((k,i)=>`
+    <div class="kpi" style="border-top:3px solid ${C4[i]}">
+      <div class="kpi-top">
+        <div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>
+        <div class="kpi-ico" style="background:${C4[i]}22">${IC[i]}</div>
+      </div>
+    </div>`).join('');
+
+  // Destroy old charts
+  Object.values(CH).forEach(c=>c.destroy()); CH={};
+  const CC=['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
+
+  CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
+
+  CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[sale,done],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
+
+  CH.co=new Chart(document.getElementById('ch-co'),{type:'bar',data:{labels:coList.map(c=>c.n.length>24?c.n.slice(0,24)+'…':c.n),datasets:[{label:'Revenue',data:coList.map(c=>c.r),backgroundColor:CC.slice(0,coList.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:()=>'',label:c=>coList[c.dataIndex].n+': '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+  CH.sp=new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:spList.slice(0,8).map(s=>s.n),datasets:[{label:'Revenue',data:spList.slice(0,8).map(s=>s.r),backgroundColor:'#10b981',borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+  document.getElementById('t-sp').innerHTML=spList.map((s,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500">${s.n}</td><td style="color:#6b7280">${s.c}</td><td class="rvg">${fmt(s.r)}</td></tr>`).join('');
+  document.getElementById('t-co').innerHTML=coList.map((c,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500" title="${c.n}">${c.n}</td><td style="color:#6b7280">${c.c}</td><td class="rv">${fmt(c.r)}</td></tr>`).join('');
+
+  document.getElementById('t-rec').innerHTML=recent.map(o=>{
+    const s=o.state==='sale';
+    return `<tr>
+      <td class="on">${o.name}</td>
+      <td title="${Array.isArray(o.partner_id)?o.partner_id[1]:''}">${Array.isArray(o.partner_id)?o.partner_id[1]:'—'}</td>
+      <td style="color:#6b7280;font-size:11px" title="${Array.isArray(o.company_id)?o.company_id[1]:''}">${Array.isArray(o.company_id)?o.company_id[1]:'—'}</td>
+      <td>${Array.isArray(o.user_id)?o.user_id[1]:'—'}</td>
+      <td style="color:#9ca3af">${(o.date_order||'').slice(0,10)}</td>
+      <td style="font-weight:600">${Array.isArray(o.currency_id)?o.currency_id[1]:''} ${fmt(parseFloat(o.amount_total)||0)}</td>
+      <td><span class="badge ${s?'bs':'bd'}">${s?'Confirmed':'Done'}</span></td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
