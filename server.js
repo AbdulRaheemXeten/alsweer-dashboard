@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // bypass SSL cert check for Odoo staging
+
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
@@ -8,17 +10,14 @@ const PORT = process.env.PORT || 3000;
 const ODOO_URL = 'https://alsweer-staging-2-32438275.dev.odoo.com';
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy all /odoo/* requests to Odoo, forwarding cookies for session
+// Proxy all /odoo/* requests to Odoo
 app.post('/odoo/*', async (req, res) => {
   const odooPath = req.path.replace('/odoo', '');
   try {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    // Forward session cookie from browser if present
+    const headers = { 'Content-Type': 'application/json' };
     if (req.headers.cookie) headers['Cookie'] = req.headers.cookie;
 
     const response = await fetch(ODOO_URL + odooPath, {
@@ -27,11 +26,9 @@ app.post('/odoo/*', async (req, res) => {
       body: JSON.stringify(req.body),
     });
 
-    // Forward Set-Cookie back to browser so session persists
+    // Forward session cookies back to browser
     const setCookie = response.headers.raw()['set-cookie'];
-    if (setCookie) {
-      setCookie.forEach(c => res.append('Set-Cookie', c));
-    }
+    if (setCookie) setCookie.forEach(c => res.append('Set-Cookie', c));
 
     const data = await response.json();
     res.json(data);
@@ -41,7 +38,7 @@ app.post('/odoo/*', async (req, res) => {
   }
 });
 
-// Serve dashboard for all other routes
+// Serve dashboard
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
