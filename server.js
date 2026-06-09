@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ODOO_URL = 'https://alsweer-staging-2-32438275.dev.odoo.com';
+const ODOO_URL = 'https://alsweer-staging-2-33171348.dev.odoo.com';
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
