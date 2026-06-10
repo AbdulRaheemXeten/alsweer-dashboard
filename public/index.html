@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Al Sweer Sales Dashboard</title>
+<title>Al Sweer Portal</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#111827;min-height:100vh}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:5px}
 
-/* LOGIN */
+/* ── LOGIN ── */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)}
 .login-box{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.22)}
 .login-logo{text-align:center;margin-bottom:28px}
@@ -27,10 +27,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .login-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px;display:none}
 .login-note{font-size:11px;color:#9ca3af;text-align:center;margin-top:14px}
 
-/* APP */
+/* ── APP SHELL ── */
 #app{display:none}
 .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.tl{display:flex;align-items:center;gap:10px}
+.tl{display:flex;align-items:center;gap:10px;cursor:pointer}
 .tl-icon{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
 .tl-title{font-weight:700;font-size:16px;color:#111827}
 .tl-sub{font-size:11px;color:#9ca3af}
@@ -40,10 +40,27 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .st{font-size:12px;font-weight:600}
 .btn-sm{padding:6px 14px;background:transparent;border:1px solid #e5e7eb;border-radius:7px;font-size:12px;color:#6b7280;cursor:pointer}
 .btn-sm:hover{background:#f9fafb}
+.btn-back{display:flex;align-items:center;gap:6px;padding:6px 14px;background:transparent;border:1px solid #e5e7eb;border-radius:7px;font-size:12px;color:#6b7280;cursor:pointer}
+.btn-back:hover{background:#f9fafb}
+.main{max-width:1400px;margin:0 auto;padding:24px}
 
-.main{max-width:1400px;margin:0 auto;padding:20px 24px}
+/* ── HOME / MODULE CARDS ── */
+#home-screen{display:none}
+.home-header{text-align:center;padding:32px 0 28px}
+.home-header h2{font-size:24px;font-weight:700;color:#111827}
+.home-header p{font-size:14px;color:#6b7280;margin-top:6px}
+.module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:900px;margin:0 auto}
+.module-card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:32px 28px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);text-align:center}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.12);border-color:transparent}
+.mc-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px}
+.mc-title{font-size:18px;font-weight:700;color:#111827;margin-bottom:8px}
+.mc-desc{font-size:13px;color:#6b7280;line-height:1.6}
+.mc-arrow{margin-top:16px;font-size:12px;color:#9ca3af}
 
-/* FILTERS */
+/* ── SCREENS ── */
+#sales-screen, #products-screen, #quotation-screen{display:none}
+
+/* ── COMMON FILTERS ── */
 .fbar{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .fg{display:flex;flex-direction:column;gap:5px}
 .flabel{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.07em}
@@ -55,7 +72,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .btn-ghost:hover{background:#f9fafb}
 .fcnt{font-size:12px;color:#6b7280}
 
-/* SEARCHABLE SELECT */
+/* ── SEARCHABLE SELECT ── */
 .ss-wrap{position:relative;min-width:220px;max-width:340px}
 .ss-trigger{padding:8px 32px 8px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;color:#111827;background:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;position:relative;transition:border-color .15s}
 .ss-trigger.ph{color:#9ca3af}
@@ -71,25 +88,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .ss-item.sel{background:#eff6ff;color:#2563eb;font-weight:600}
 .ss-empty{padding:12px;text-align:center;font-size:12px;color:#9ca3af}
 
-/* LOADING */
-#loading{display:none;text-align:center;padding:80px 20px}
-.spinner{width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 18px}
+/* ── LOADING / ERROR ── */
+#s-loading,#p-loading,#q-loading{display:none;text-align:center;padding:60px 20px}
+.spinner{width:44px;height:44px;border:4px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.steps{display:inline-flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px}
-.step{font-size:13px;color:#d1d5db;display:flex;align-items:center;gap:8px}
-.step.active{color:#111827;font-weight:600}.step.done{color:#10b981}
-
-/* ERROR */
 #err-bar{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:13px;color:#991b1b;align-items:center;gap:8px}
 #err-bar button{margin-left:auto;background:none;border:none;color:#6366f1;cursor:pointer;font-weight:600;font-size:13px}
-
-/* IDLE */
-#idle{text-align:center;padding:100px 20px}
-.idle-icon{font-size:56px;margin-bottom:14px}
-.idle-title{font-size:18px;font-weight:600;color:#111827;margin-bottom:6px}
+#idle{text-align:center;padding:80px 20px}
+.idle-icon{font-size:52px;margin-bottom:12px}
+.idle-title{font-size:17px;font-weight:600;color:#111827;margin-bottom:5px}
 .idle-sub{font-size:13px;color:#6b7280}
 
-/* KPI */
+/* ── KPI ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
 .kpi{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .kpi-top{display:flex;justify-content:space-between;align-items:flex-start}
@@ -98,7 +108,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .kpi-sub{font-size:11px;color:#9ca3af}
 .kpi-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
 
-/* CHARTS */
+/* ── CHARTS ── */
 .crow{display:grid;gap:14px;margin-bottom:14px}
 .crow.r21{grid-template-columns:2fr 1fr}
 .crow.r11{grid-template-columns:1fr 1fr}
@@ -108,8 +118,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#11182
 .csub{font-size:11px;color:#9ca3af}
 .cbody{padding:16px 18px}
 .cbody canvas{max-height:230px}
-
-/* TABLES */
 .trow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .tcard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .thead2{padding:13px 18px;border-bottom:1px solid #f3f4f6;font-weight:600;font-size:14px;color:#111827}
@@ -123,90 +131,123 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
 .rk{color:#d1d5db;font-size:10px;font-weight:700;max-width:28px}
 .rv{font-weight:600;color:#6366f1}.rvg{font-weight:600;color:#10b981}
 .on{font-weight:700;color:#6366f1}
-
-/* RECENT */
 .rcard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:24px}
 .rscroll{overflow-x:auto}
+.steps{display:inline-flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px}
+.step{font-size:13px;color:#d1d5db;display:flex;align-items:center;gap:8px}
+.step.active{color:#111827;font-weight:600}.step.done{color:#10b981}
 
-.empty{height:150px;display:flex;align-items:center;justify-content:center;color:#d1d5db;font-size:13px;flex-direction:column;gap:6px}
+/* ── PRODUCT SEARCH ── */
+.psearch-box{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.psearch-row{display:flex;gap:10px;align-items:center}
+.psearch-input{flex:1;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#111827;outline:none;font-family:inherit}
+.psearch-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.psearch-btn{padding:11px 22px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.psearch-btn:hover{background:#4f46e5}
+.p-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.p-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);cursor:pointer;transition:all .15s}
+.p-card:hover{border-color:#6366f1;box-shadow:0 4px 16px rgba(99,102,241,.15);transform:translateY(-2px)}
+.p-card-code{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.p-card-name{font-size:14px;font-weight:600;color:#111827;margin-bottom:10px;line-height:1.4}
+.p-card-price{font-size:20px;font-weight:700;color:#6366f1;margin-bottom:8px}
+.p-card-tags{display:flex;flex-wrap:wrap;gap:6px}
+.p-tag{background:#f3f4f6;border-radius:6px;padding:3px 8px;font-size:11px;color:#6b7280}
+.p-empty{text-align:center;padding:60px 20px;color:#9ca3af;font-size:14px}
 
-/* ── MOBILE RESPONSIVE ───────────────────────────────────── */
-@media(max-width:900px){
-  .crow.r21,.crow.r11,.trow{grid-template-columns:1fr}
-}
+/* Product Detail Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:32px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.modal-close{float:right;background:none;border:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1}
+.modal-close:hover{color:#111827}
+.modal h2{font-size:20px;font-weight:700;color:#111827;margin-bottom:4px;padding-right:32px}
+.modal-code{font-size:12px;color:#9ca3af;margin-bottom:20px}
+.modal-price{font-size:32px;font-weight:700;color:#6366f1;margin-bottom:20px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.modal-field{background:#f9fafb;border-radius:10px;padding:12px 14px}
+.modal-field-lbl{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.modal-field-val{font-size:14px;font-weight:600;color:#111827}
+.modal-desc{background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6}
 
+/* ── QUOTATION ── */
+.q-form{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.q-form h3{font-size:16px;font-weight:700;color:#111827;margin-bottom:18px}
+.q-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.q-field{display:flex;flex-direction:column;gap:6px}
+.q-label{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.05em}
+.q-input{padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;color:#111827;outline:none;font-family:inherit}
+.q-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.q-input[readonly]{background:#f9fafb;color:#6b7280}
+.q-lines{margin-top:20px}
+.q-lines-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.q-lines h4{font-size:14px;font-weight:600;color:#111827}
+.btn-add-line{padding:7px 14px;background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-add-line:hover{background:#dbeafe}
+.q-line{display:grid;grid-template-columns:2fr 1fr 1fr 36px;gap:8px;align-items:center;margin-bottom:8px}
+.q-line input{padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#111827;outline:none;font-family:inherit;width:100%}
+.q-line input:focus{border-color:#6366f1}
+.q-line input[readonly]{background:#f9fafb;color:#374151}
+.btn-del-line{width:32px;height:32px;background:#fef2f2;border:1px solid #fecaca;border-radius:7px;color:#ef4444;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.btn-del-line:hover{background:#fee2e2}
+.q-total-bar{background:#f9fafb;border-radius:12px;padding:16px 20px;display:flex;justify-content:flex-end;gap:32px;margin-top:12px}
+.q-total-item{text-align:right}
+.q-total-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700}
+.q-total-val{font-size:18px;font-weight:700;color:#111827;margin-top:2px}
+.q-total-val.big{font-size:22px;color:#6366f1}
+.btn-pdf{padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px}
+.btn-pdf:hover{opacity:.9}
+.q-product-drop{position:relative}
+.q-pdrop{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:300;max-height:200px;overflow-y:auto;display:none}
+.q-pdrop.open{display:block}
+.q-pdrop-item{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid #f9fafb}
+.q-pdrop-item:hover{background:#f9fafb}
+.q-pdrop-item:last-child{border-bottom:none}
+.q-pdrop-item small{display:block;color:#9ca3af;font-size:11px;margin-top:2px}
+
+/* ── STEP STATUS ── */
+.st-bar{display:flex;align-items:center;gap:8px;margin-top:4px}
+
+/* ── MOBILE ── */
+@media(max-width:900px){.crow.r21,.crow.r11,.trow{grid-template-columns:1fr}}
 @media(max-width:640px){
-  /* Login */
-  .login-box{padding:32px 20px;border-radius:16px;margin:16px}
-
-  /* Topbar */
-  .topbar{padding:0 12px;height:50px}
-  .tl-sub{display:none}
+  .login-box{padding:28px 18px;margin:12px}
+  .topbar{padding:0 12px}
+  .tl-sub,.user-pill{display:none}
   .tl-title{font-size:14px}
-  .user-pill{display:none}
-  .btn-sm{padding:5px 10px;font-size:11px}
-  .st{font-size:11px}
-
-  /* Main padding */
+  .btn-sm,.btn-back{padding:5px 10px;font-size:11px}
   .main{padding:12px}
-
-  /* Filter bar — stack vertically */
   .fbar{flex-direction:column;gap:10px;padding:14px}
-  .fg{width:100%}
-  .ss-wrap{min-width:100%;max-width:100%}
-  .ss-trigger{width:100%}
+  .fg,.ss-wrap{width:100%;min-width:100%;max-width:100%}
   .ss-drop{width:100%;max-width:100%}
   .fdate{width:100%;font-size:16px}
   .fg:last-child{flex-direction:column!important}
-  .btn-apply{width:100%;justify-content:center;padding:12px}
-  .btn-ghost{width:100%;justify-content:center;padding:12px}
-  .fcnt{text-align:center}
-
-  /* KPI grid — 2 per row on mobile */
+  .btn-apply,.btn-ghost{width:100%;justify-content:center}
   .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .kpi{padding:14px}
-  .kpi-val{font-size:22px}
-  .kpi-ico{width:32px;height:32px;font-size:16px}
-
-  /* Charts — full width */
+  .kpi{padding:14px}.kpi-val{font-size:20px}
   .crow.r21,.crow.r11{grid-template-columns:1fr;gap:10px}
   .cbody canvas{max-height:200px}
-  .chead{padding:10px 14px;flex-direction:column;align-items:flex-start;gap:3px}
-  .csub{font-size:10px}
-  .cbody{padding:12px}
-
-  /* Tables — 1 col stack */
   .trow{grid-template-columns:1fr;gap:10px}
-  .tscroll{max-height:220px}
-
-  /* Recent orders — hide Company col on small screens */
-  #t-rec tr td:nth-child(3),
-  #t-rec tr th:nth-child(3){display:none}
-  td{padding:8px 10px;font-size:11px}
-  th{padding:7px 10px;font-size:9px}
-
-  /* Step loader */
-  #loading{padding:50px 16px}
-  .step{font-size:12px}
-
-  /* Idle screen */
-  #idle{padding:60px 16px}
-  .idle-icon{font-size:40px}
-  .idle-title{font-size:16px}
-
-  /* Error bar */
-  #err-bar{font-size:12px;padding:10px 14px;flex-wrap:wrap}
+  #t-rec tr td:nth-child(3),#t-rec tr th:nth-child(3){display:none}
+  td{padding:8px 10px;font-size:11px}th{padding:7px 10px;font-size:9px}
+  .module-grid{grid-template-columns:1fr}
+  .module-card{padding:24px 20px}
+  .q-row{grid-template-columns:1fr}
+  .q-line{grid-template-columns:1fr 80px 80px 32px}
+  .modal{padding:20px}
+  .modal-grid{grid-template-columns:1fr}
+  .psearch-row{flex-direction:column}
+  .psearch-btn{width:100%}
 }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-icon">📊</div>
-      <h1>Al Sweer Sales Dashboard</h1>
+      <div class="login-icon">🏢</div>
+      <h1>Al Sweer Portal</h1>
       <p>Sign in with your Odoo credentials</p>
     </div>
     <div class="fgroup">
@@ -229,106 +270,230 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
   </div>
 </div>
 
-<!-- APP -->
+<!-- ═══ APP ═══ -->
 <div id="app">
   <div class="topbar">
-    <div class="tl">
-      <div class="tl-icon">📊</div>
-      <span class="tl-title">Sales Dashboard</span>
-      <span class="tl-sub">Al Sweer Group · Live</span>
+    <div class="tl" onclick="goHome()">
+      <div class="tl-icon">🏢</div>
+      <span class="tl-title" id="page-title">Al Sweer Portal</span>
+      <span class="tl-sub" id="page-sub">Home</span>
     </div>
     <div class="tr">
       <span class="user-pill" id="user-pill"></span>
-      <span class="dot" id="st-dot" style="background:#d1d5db"></span>
-      <span class="st" id="st-txt" style="color:#9ca3af">Ready</span>
+      <span class="dot" id="st-dot" style="background:#10b981"></span>
+      <span class="st" id="st-txt" style="color:#10b981">Live</span>
+      <button class="btn-back" id="btn-back" onclick="goHome()" style="display:none">← Home</button>
       <button class="btn-sm" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
   <div class="main">
-    <!-- FILTER BAR -->
-    <div class="fbar">
-      <div class="fg">
-        <span class="flabel">Company</span>
-        <div class="ss-wrap" id="ss-co">
-          <div class="ss-trigger ph" id="ss-co-t" onclick="toggleSS('co')">All Companies<span class="ss-arrow">▼</span></div>
-          <div class="ss-drop" id="ss-co-d">
-            <div class="ss-search"><input id="ss-co-q" placeholder="Search company…" oninput="filterSS('co')" onclick="event.stopPropagation()"/></div>
-            <div class="ss-list" id="ss-co-l"></div>
-          </div>
+
+    <!-- ═══ HOME ═══ -->
+    <div id="home-screen">
+      <div class="home-header">
+        <h2>Welcome, <span id="home-name"></span> 👋</h2>
+        <p>Choose a module to get started</p>
+      </div>
+      <div class="module-grid">
+        <div class="module-card" onclick="openModule('sales')">
+          <div class="mc-icon" style="background:#eff6ff">📊</div>
+          <div class="mc-title">Sales Dashboard</div>
+          <div class="mc-desc">View live sales performance, revenue by month, top salespeople, and order status across all companies.</div>
+          <div class="mc-arrow">Open Dashboard →</div>
         </div>
-      </div>
-      <div class="fg">
-        <span class="flabel">Date From</span>
-        <input class="fdate" type="date" id="f-from" value="2026-01-01"/>
-      </div>
-      <div class="fg">
-        <span class="flabel">Date To</span>
-        <input class="fdate" type="date" id="f-to"/>
-      </div>
-      <div class="fg">
-        <span class="flabel">Salesperson</span>
-        <div class="ss-wrap" id="ss-sp">
-          <div class="ss-trigger ph" id="ss-sp-t" onclick="toggleSS('sp')">All Salespeople<span class="ss-arrow">▼</span></div>
-          <div class="ss-drop" id="ss-sp-d">
-            <div class="ss-search"><input id="ss-sp-q" placeholder="Search salesperson…" oninput="filterSS('sp')" onclick="event.stopPropagation()"/></div>
-            <div class="ss-list" id="ss-sp-l"></div>
-          </div>
+        <div class="module-card" onclick="openModule('products')">
+          <div class="mc-icon" style="background:#f0fdf4">📦</div>
+          <div class="mc-title">Product Info</div>
+          <div class="mc-desc">Search any product and view its selling price, unit of measure, category, brand, and full details.</div>
+          <div class="mc-arrow">Search Products →</div>
         </div>
-      </div>
-      <div class="fg" style="flex-direction:row;gap:8px;align-items:flex-end">
-        <button class="btn-apply" id="btn-apply" onclick="applyFilters()">🔍 Apply Filters</button>
-        <button class="btn-ghost" onclick="resetFilters()">Reset</button>
-        <span class="fcnt" id="fcnt"></span>
+        <div class="module-card" onclick="openModule('quotation')">
+          <div class="mc-icon" style="background:#fdf4ff">📋</div>
+          <div class="mc-title">Quick Quotation</div>
+          <div class="mc-desc">Create a professional quotation PDF instantly — select customer, add products, and download. No Odoo record created.</div>
+          <div class="mc-arrow">Create Quotation →</div>
+        </div>
       </div>
     </div>
 
-    <div id="err-bar">⚠️ <span id="err-msg"></span><button onclick="applyFilters()">Retry</button></div>
-
-    <div id="idle"><div class="idle-icon">📊</div><div class="idle-title">Al Sweer Sales Dashboard</div><div class="idle-sub">Select your filters and click <strong>Apply Filters</strong> to load live data.</div></div>
-
-    <div id="loading">
-      <div class="spinner"></div>
-      <p style="font-size:15px;font-weight:600;color:#111827;margin-bottom:14px">Fetching data from Odoo…</p>
-      <div class="steps">
-        <div class="step" id="s0">○ Connecting to Odoo</div>
-        <div class="step" id="s1">○ Fetching sales orders</div>
-        <div class="step" id="s2">○ Processing data</div>
-        <div class="step" id="s3">○ Building charts</div>
+    <!-- ═══ SALES DASHBOARD ═══ -->
+    <div id="sales-screen">
+      <div class="fbar">
+        <div class="fg">
+          <span class="flabel">Company</span>
+          <div class="ss-wrap" id="ss-co">
+            <div class="ss-trigger ph" id="ss-co-t" onclick="toggleSS('co')">All Companies<span class="ss-arrow">▼</span></div>
+            <div class="ss-drop" id="ss-co-d">
+              <div class="ss-search"><input id="ss-co-q" placeholder="Search company…" oninput="filterSS('co')" onclick="event.stopPropagation()"/></div>
+              <div class="ss-list" id="ss-co-l"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fg">
+          <span class="flabel">Date From</span>
+          <input class="fdate" type="date" id="f-from" value="2026-01-01"/>
+        </div>
+        <div class="fg">
+          <span class="flabel">Date To</span>
+          <input class="fdate" type="date" id="f-to"/>
+        </div>
+        <div class="fg">
+          <span class="flabel">Salesperson</span>
+          <div class="ss-wrap" id="ss-sp">
+            <div class="ss-trigger ph" id="ss-sp-t" onclick="toggleSS('sp')">All Salespeople<span class="ss-arrow">▼</span></div>
+            <div class="ss-drop" id="ss-sp-d">
+              <div class="ss-search"><input id="ss-sp-q" placeholder="Search salesperson…" oninput="filterSS('sp')" onclick="event.stopPropagation()"/></div>
+              <div class="ss-list" id="ss-sp-l"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fg" style="flex-direction:row;gap:8px;align-items:flex-end">
+          <button class="btn-apply" id="btn-apply" onclick="applyFilters()">🔍 Apply Filters</button>
+          <button class="btn-ghost" onclick="resetFilters()">Reset</button>
+          <span class="fcnt" id="fcnt"></span>
+        </div>
+      </div>
+      <div id="err-bar">⚠️ <span id="err-msg"></span><button onclick="applyFilters()">Retry</button></div>
+      <div id="idle"><div class="idle-icon">📊</div><div class="idle-title">Sales Dashboard</div><div class="idle-sub">Select filters and click <strong>Apply Filters</strong> to load live data.</div></div>
+      <div id="s-loading"><div class="spinner"></div><p style="font-size:14px;font-weight:600;color:#111827;margin-bottom:12px">Fetching from Odoo…</p><div class="steps"><div class="step" id="s0">○ Connecting</div><div class="step" id="s1">○ Fetching aggregates</div><div class="step" id="s2">○ Fetching charts</div><div class="step" id="s3">○ Building dashboard</div></div></div>
+      <div id="dash" style="display:none">
+        <div class="kpi-grid" id="kpis"></div>
+        <div class="crow r21">
+          <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Month</span><span class="csub" id="month-sub"></span></div><div class="cbody"><canvas id="ch-month"></canvas></div></div>
+          <div class="ccard"><div class="chead"><span class="ctitle">Order Status</span></div><div class="cbody"><canvas id="ch-status"></canvas></div></div>
+        </div>
+        <div class="crow r11">
+          <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Company</span></div><div class="cbody"><canvas id="ch-co"></canvas></div></div>
+          <div class="ccard"><div class="chead"><span class="ctitle">Top Salespeople</span></div><div class="cbody"><canvas id="ch-sp"></canvas></div></div>
+        </div>
+        <div class="trow">
+          <div class="tcard"><div class="thead2">Salesperson Performance</div><div class="tscroll"><table><thead><tr><th>#</th><th>Name</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-sp"></tbody></table></div></div>
+          <div class="tcard"><div class="thead2">Revenue by Company</div><div class="tscroll"><table><thead><tr><th>#</th><th>Company</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-co"></tbody></table></div></div>
+        </div>
+        <div class="rcard">
+          <div class="chead"><span class="ctitle">Recent Orders</span><span class="csub" id="rec-sub"></span></div>
+          <div class="rscroll"><table><thead><tr><th>Order</th><th>Customer</th><th>Company</th><th>Salesperson</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody id="t-rec"></tbody></table></div>
+        </div>
       </div>
     </div>
 
-    <div id="dash" style="display:none">
-      <div class="kpi-grid" id="kpis"></div>
-      <div class="crow r21">
-        <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Month</span><span class="csub" id="month-sub"></span></div><div class="cbody"><canvas id="ch-month"></canvas></div></div>
-        <div class="ccard"><div class="chead"><span class="ctitle">Order Status</span></div><div class="cbody"><canvas id="ch-status"></canvas></div></div>
+    <!-- ═══ PRODUCTS ═══ -->
+    <div id="products-screen">
+      <div class="psearch-box">
+        <div class="psearch-row">
+          <input class="psearch-input" id="p-search-input" type="text" placeholder="Search by product name or code…" onkeydown="if(event.key==='Enter')searchProducts()"/>
+          <button class="psearch-btn" onclick="searchProducts()">🔍 Search</button>
+        </div>
       </div>
-      <div class="crow r11">
-        <div class="ccard"><div class="chead"><span class="ctitle">Revenue by Company</span></div><div class="cbody"><canvas id="ch-co"></canvas></div></div>
-        <div class="ccard"><div class="chead"><span class="ctitle">Top Salespeople</span></div><div class="cbody"><canvas id="ch-sp"></canvas></div></div>
+      <div id="p-loading"><div class="spinner"></div><p style="font-size:14px;color:#6b7280">Searching products…</p></div>
+      <div id="p-idle" style="text-align:center;padding:60px 20px">
+        <div style="font-size:48px;margin-bottom:12px">📦</div>
+        <div style="font-size:16px;font-weight:600;color:#111827;margin-bottom:6px">Product Info</div>
+        <div style="font-size:13px;color:#6b7280">Type a product name or code and press Search</div>
       </div>
-      <div class="trow">
-        <div class="tcard"><div class="thead2">Salesperson Performance</div><div class="tscroll"><table><thead><tr><th>#</th><th>Name</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-sp"></tbody></table></div></div>
-        <div class="tcard"><div class="thead2">Revenue by Company</div><div class="tscroll"><table><thead><tr><th>#</th><th>Company</th><th>Orders</th><th>Revenue</th></tr></thead><tbody id="t-co"></tbody></table></div></div>
+      <div id="p-results" class="p-results-grid"></div>
+    </div>
+
+    <!-- ═══ QUOTATION ═══ -->
+    <div id="quotation-screen">
+      <div class="q-form">
+        <h3>📋 Quick Quotation</h3>
+        <div class="q-row">
+          <div class="q-field">
+            <label class="q-label">Customer *</label>
+            <div class="ss-wrap" id="ss-cust" style="min-width:100%;max-width:100%">
+              <div class="ss-trigger ph" id="ss-cust-t" onclick="toggleSS('cust')">Select Customer<span class="ss-arrow">▼</span></div>
+              <div class="ss-drop" id="ss-cust-d">
+                <div class="ss-search"><input id="ss-cust-q" placeholder="Search customer…" oninput="filterSS('cust')" onclick="event.stopPropagation()"/></div>
+                <div class="ss-list" id="ss-cust-l"></div>
+              </div>
+            </div>
+          </div>
+          <div class="q-field">
+            <label class="q-label">Company</label>
+            <div class="ss-wrap" id="ss-qco" style="min-width:100%;max-width:100%">
+              <div class="ss-trigger ph" id="ss-qco-t" onclick="toggleSS('qco')">Select Company<span class="ss-arrow">▼</span></div>
+              <div class="ss-drop" id="ss-qco-d">
+                <div class="ss-search"><input id="ss-qco-q" placeholder="Search company…" oninput="filterSS('qco')" onclick="event.stopPropagation()"/></div>
+                <div class="ss-list" id="ss-qco-l"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="q-row">
+          <div class="q-field">
+            <label class="q-label">Quotation Date</label>
+            <input class="q-input" type="date" id="q-date"/>
+          </div>
+          <div class="q-field">
+            <label class="q-label">Valid Until</label>
+            <input class="q-input" type="date" id="q-valid"/>
+          </div>
+        </div>
+        <div class="q-field" style="margin-bottom:16px">
+          <label class="q-label">Notes (optional)</label>
+          <input class="q-input" type="text" id="q-notes" placeholder="Any notes for this quotation…"/>
+        </div>
+
+        <!-- Lines -->
+        <div class="q-lines">
+          <div class="q-lines-header">
+            <h4>Products</h4>
+            <button class="btn-add-line" onclick="addLine()">+ Add Product</button>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 36px;gap:8px;padding:0 0 6px;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">
+            <span>Product</span><span>Unit Price</span><span>Qty</span><span></span>
+          </div>
+          <div id="q-lines-body"></div>
+          <div class="q-total-bar">
+            <div class="q-total-item"><div class="q-total-lbl">Subtotal</div><div class="q-total-val" id="q-subtotal">0.00</div></div>
+            <div class="q-total-item"><div class="q-total-lbl">Total</div><div class="q-total-val big" id="q-total">0.00</div></div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:20px">
+          <button class="btn-pdf" onclick="generatePDF()">📄 Download PDF Quotation</button>
+        </div>
       </div>
-      <div class="rcard">
-        <div class="chead"><span class="ctitle">Recent Orders</span><span class="csub" id="rec-sub"></span></div>
-        <div class="rscroll"><table><thead><tr><th>Order</th><th>Customer</th><th>Company</th><th>Salesperson</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody id="t-rec"></tbody></table></div>
-      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Product Detail Modal -->
+<div class="modal-bg" id="prod-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <button class="modal-close" onclick="document.getElementById('prod-modal').classList.remove('open')">✕</button>
+    <h2 id="m-name"></h2>
+    <div class="modal-code" id="m-code"></div>
+    <div class="modal-price" id="m-price"></div>
+    <div class="modal-grid" id="m-grid"></div>
+    <div id="m-desc-wrap" style="display:none">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:8px">Description</div>
+      <div class="modal-desc" id="m-desc"></div>
     </div>
   </div>
 </div>
 
 <script>
-// ── STATE ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
 let SESSION = {uid:null, name:''};
 let COS = [{id:0,name:'All Companies'}];
 let SPS = [{id:0,name:'All Salespeople'}];
-let selCo = 0, selSp = 0;
+let CUSTS = [];
+let QCOS = [];
+let selCo=0, selSp=0, selCust=0, selQCo=0;
+let qLines = [];
+let lineProductCache = {};
 let CH = {};
+let currentModule = 'home';
 
-// ── RPC via proxy ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// RPC
+// ══════════════════════════════════════════════════════════════
 async function rpc(path, params) {
   const r = await fetch('/odoo' + path, {
     method:'POST', credentials:'include',
@@ -345,8 +510,13 @@ function sr(model, domain, fields, limit=500, order='') {
 function sc(model, domain) {
   return rpc('/web/dataset/call_kw', {model, method:'search_count', args:[domain], kwargs:{}});
 }
+function rg(model, domain, fields, groupby, limit=100) {
+  return rpc('/web/dataset/call_kw', {model, method:'read_group', args:[], kwargs:{domain, fields, groupby, limit, lazy:false}});
+}
 
-// ── LOGIN ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
 async function getDbName() {
   try {
     const r = await fetch('/odoo/dbname');
@@ -354,7 +524,6 @@ async function getDbName() {
     const dbs = j.result || [];
     if (dbs.length > 0) return dbs[0];
   } catch(e) {}
-  // fallback: derive from hostname
   return 'alsweer-staging-2-33171348';
 }
 
@@ -364,30 +533,33 @@ async function doLogin() {
   const btn   = document.getElementById('li-btn');
   const txt   = document.getElementById('li-txt');
   const err   = document.getElementById('li-err');
-  err.style.display = 'none';
-  if (!email||!pass) { showErr2('Please enter your email and password.'); return; }
+  err.style.display='none';
+  if (!email||!pass) { showLoginErr('Please enter your email and password.'); return; }
   btn.disabled=true; txt.textContent='Connecting…';
   try {
-    // Step 1: get the correct database name
     txt.textContent='Getting database…';
     const db = await getDbName();
-    console.log('Using DB:', db);
-
-    // Step 2: authenticate
     txt.textContent='Signing in…';
     const res = await rpc('/web/session/authenticate', {db, login:email, password:pass});
     if (!res?.uid) throw new Error('Invalid credentials. Please check and try again.');
     SESSION = {uid:res.uid, name:res.name||email};
     document.getElementById('user-pill').textContent = SESSION.name;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    document.getElementById('home-name').textContent = SESSION.name.split(' ')[0];
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
     document.getElementById('f-to').value = new Date().toISOString().split('T')[0];
-    await loadLookups();
+    // Set quotation dates
+    const today = new Date();
+    document.getElementById('q-date').value = today.toISOString().split('T')[0];
+    const valid = new Date(today); valid.setDate(valid.getDate()+30);
+    document.getElementById('q-valid').value = valid.toISOString().split('T')[0];
+    goHome();
+    loadLookups();
   } catch(e) {
-    showErr2(e.message||'Login failed');
+    showLoginErr(e.message||'Login failed');
   } finally { btn.disabled=false; txt.textContent='Sign In →'; }
 }
-function showErr2(m) { const e=document.getElementById('li-err'); e.textContent=m; e.style.display='block'; }
+function showLoginErr(m) { const e=document.getElementById('li-err'); e.textContent=m; e.style.display='block'; }
 document.getElementById('li-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
@@ -396,74 +568,114 @@ function doLogout() {
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('li-pass').value='';
-  document.getElementById('dash').style.display='none';
-  document.getElementById('idle').style.display='block';
 }
 
-// ── LOAD LOOKUPS ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function goHome() {
+  currentModule='home';
+  document.getElementById('home-screen').style.display='block';
+  document.getElementById('sales-screen').style.display='none';
+  document.getElementById('products-screen').style.display='none';
+  document.getElementById('quotation-screen').style.display='none';
+  document.getElementById('page-title').textContent='Al Sweer Portal';
+  document.getElementById('page-sub').textContent='Home';
+  document.getElementById('btn-back').style.display='none';
+}
+
+function openModule(mod) {
+  currentModule=mod;
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('sales-screen').style.display = mod==='sales'?'block':'none';
+  document.getElementById('products-screen').style.display = mod==='products'?'block':'none';
+  document.getElementById('quotation-screen').style.display = mod==='quotation'?'block':'none';
+  document.getElementById('btn-back').style.display='flex';
+  const titles = {sales:['Sales Dashboard','Live data from Odoo'], products:['Product Info','Search & view products'], quotation:['Quick Quotation','Generate PDF without saving']};
+  document.getElementById('page-title').textContent = titles[mod][0];
+  document.getElementById('page-sub').textContent = titles[mod][1];
+  if(mod==='quotation' && qLines.length===0) addLine();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOOKUPS
+// ══════════════════════════════════════════════════════════════
 async function loadLookups() {
   try {
-    const [cos, sps] = await Promise.all([
+    const [cos, sps, custs] = await Promise.all([
       sr('res.company', [], ['id','name'], 100, 'name asc'),
-      sr('res.users', [['active','=',true],['share','=',false]], ['id','name'], 200, 'name asc')
+      sr('res.users', [['active','=',true],['share','=',false]], ['id','name'], 200, 'name asc'),
+      sr('res.partner', [['customer_rank','>',0],['active','=',true]], ['id','name'], 500, 'name asc'),
     ]);
     COS = [{id:0,name:'All Companies'}, ...cos.map(c=>({id:c.id,name:c.name}))];
     SPS = [{id:0,name:'All Salespeople'}, ...sps.map(s=>({id:s.id,name:s.name}))];
+    CUSTS = custs.map(c=>({id:c.id,name:c.name}));
+    QCOS = cos.map(c=>({id:c.id,name:c.name}));
     buildSSList('co', COS);
     buildSSList('sp', SPS);
+    buildSSList('cust', CUSTS);
+    buildSSList('qco', QCOS);
   } catch(e) { console.error('Lookup error', e); }
 }
 
-// ── SEARCHABLE SELECT ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// SEARCHABLE SELECT (generic)
+// ══════════════════════════════════════════════════════════════
+const SS_DATA = {co:()=>COS, sp:()=>SPS, cust:()=>CUSTS, qco:()=>QCOS};
 function buildSSList(key, items) { renderSSList(key, items); }
-
 function renderSSList(key, items) {
   const el = document.getElementById(`ss-${key}-l`);
-  const cur = key==='co'?selCo:selSp;
+  if(!el) return;
+  const cur = key==='co'?selCo:key==='sp'?selSp:key==='cust'?selCust:selQCo;
   el.innerHTML = items.length===0
     ? '<div class="ss-empty">No results</div>'
     : items.map(it=>`<div class="ss-item${it.id===cur?' sel':''}" onclick="pickSS('${key}',${it.id},'${it.name.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}')">${it.name}</div>`).join('');
 }
-
 function filterSS(key) {
   const q = document.getElementById(`ss-${key}-q`).value.toLowerCase();
-  const src = key==='co'?COS:SPS;
+  const src = SS_DATA[key]?.() || [];
   renderSSList(key, q?src.filter(x=>x.name.toLowerCase().includes(q)):src);
 }
-
 function pickSS(key, id, name) {
-  if(key==='co') selCo=id; else selSp=id;
+  if(key==='co') selCo=id;
+  else if(key==='sp') selSp=id;
+  else if(key==='cust') selCust=id;
+  else if(key==='qco') selQCo=id;
   const t = document.getElementById(`ss-${key}-t`);
   t.innerHTML = name+'<span class="ss-arrow">▼</span>';
   t.className = 'ss-trigger' + (id===0?' ph':'');
   document.getElementById(`ss-${key}-d`).style.display='none';
   t.classList.remove('open');
-  renderSSList(key, key==='co'?COS:SPS);
+  renderSSList(key, SS_DATA[key]?.() || []);
 }
-
 function toggleSS(key) {
   const d=document.getElementById(`ss-${key}-d`);
   const t=document.getElementById(`ss-${key}-t`);
   const open = d.style.display!=='none';
-  ['co','sp'].forEach(k=>{
-    document.getElementById(`ss-${k}-d`).style.display='none';
-    document.getElementById(`ss-${k}-t`).classList.remove('open');
-    document.getElementById(`ss-${k}-q`).value='';
-    filterSS(k);
+  ['co','sp','cust','qco'].forEach(k=>{
+    const dd=document.getElementById(`ss-${k}-d`);
+    const tt=document.getElementById(`ss-${k}-t`);
+    if(dd){dd.style.display='none'; tt&&tt.classList.remove('open');}
+    const qi=document.getElementById(`ss-${k}-q`);
+    if(qi){qi.value=''; filterSS(k);}
   });
-  if(!open){ d.style.display='block'; t.classList.add('open'); setTimeout(()=>document.getElementById(`ss-${key}-q`).focus(),40); }
+  if(!open){ d.style.display='block'; t.classList.add('open'); setTimeout(()=>document.getElementById(`ss-${key}-q`)?.focus(),40); }
 }
-
 document.addEventListener('mousedown', e=>{
-  ['co','sp'].forEach(k=>{
+  ['co','sp','cust','qco'].forEach(k=>{
     const w=document.getElementById(`ss-${k}`);
     if(w&&!w.contains(e.target)){
-      document.getElementById(`ss-${k}-d`).style.display='none';
-      document.getElementById(`ss-${k}-t`).classList.remove('open');
+      const d=document.getElementById(`ss-${k}-d`);
+      const t=document.getElementById(`ss-${k}-t`);
+      if(d)d.style.display='none';
+      if(t)t.classList.remove('open');
     }
   });
 });
 
+// ══════════════════════════════════════════════════════════════
+// SALES DASHBOARD
+// ══════════════════════════════════════════════════════════════
 function resetFilters() {
   selCo=0; selSp=0;
   ['co','sp'].forEach(k=>{
@@ -477,60 +689,35 @@ function resetFilters() {
   document.getElementById('dash').style.display='none';
   document.getElementById('idle').style.display='block';
   document.getElementById('fcnt').textContent='';
-  setSt('ready');
 }
 
-// ── STEP ANIMATION ────────────────────────────────────────────
 let stTimers=[];
-const STEP_LABELS = ['Connecting to Odoo','Fetching aggregates','Fetching charts','Building dashboard'];
+const STEP_LABELS=['Connecting to Odoo','Fetching aggregates','Fetching charts','Building dashboard'];
 function startSteps() {
   stTimers.forEach(clearTimeout);
   STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step'; e.textContent=`○ ${STEP_LABELS[i]}`; });
-  stTimers = STEP_LABELS.map((_,i)=>setTimeout(()=>{
-    if(i>0){ const p=document.getElementById(`s${i-1}`); p.className='step done'; p.textContent=`✓ ${STEP_LABELS[i-1]}`; }
+  stTimers=STEP_LABELS.map((_,i)=>setTimeout(()=>{
+    if(i>0){const p=document.getElementById(`s${i-1}`); p.className='step done'; p.textContent=`✓ ${STEP_LABELS[i-1]}`;}
     const c=document.getElementById(`s${i}`); c.className='step active'; c.textContent=`→ ${STEP_LABELS[i]}`;
   }, i*1800));
 }
 
-// ── READ GROUP (server-side aggregation) ──────────────────────
-// Uses Odoo's read_group — returns accurate totals for ALL records
-// regardless of count. No sampling, no missing data.
-function rg(model, domain, fields, groupby, limit=100) {
-  return rpc('/web/dataset/call_kw', {
-    model, method:'read_group', args:[],
-    kwargs:{ domain, fields, groupby, limit, lazy:false }
-  });
-}
-
-// ── APPLY FILTERS ─────────────────────────────────────────────
 async function applyFilters() {
-  const from = document.getElementById('f-from').value;
-  const to   = document.getElementById('f-to').value;
+  const from=document.getElementById('f-from').value;
+  const to=document.getElementById('f-to').value;
   document.getElementById('idle').style.display='none';
-  document.getElementById('loading').style.display='block';
+  document.getElementById('s-loading').style.display='block';
   document.getElementById('dash').style.display='none';
   document.getElementById('err-bar').style.display='none';
   document.getElementById('btn-apply').disabled=true;
-  setSt('loading');
   startSteps();
-
   try {
     const domain=[['state','in',['sale','done']]];
     if(selCo) domain.push(['company_id','=',selCo]);
     if(selSp) domain.push(['user_id','=',selSp]);
     if(from)  domain.push(['date_order','>=',from+' 00:00:00']);
     if(to)    domain.push(['date_order','<=',to+' 23:59:59']);
-
-    // ALL aggregations done server-side via read_group — 100% accurate
-    const [
-      totalRows,      // KPI: total revenue, order count
-      byMonth,        // Revenue by month chart
-      byState,        // Order status donut
-      byCompany,      // Revenue by company chart
-      bySalesperson,  // Top salespeople chart
-      byPartner,      // Unique customers count
-      recent          // Recent orders table (50 latest only)
-    ] = await Promise.all([
+    const [totalRows,byMonth,byState,byCompany,bySalesperson,byPartner,recent] = await Promise.all([
       rg('sale.order', domain, ['amount_untaxed:sum'], []),
       rg('sale.order', domain, ['amount_untaxed:sum'], ['date_order:month'], 24),
       rg('sale.order', domain, [], ['state'], 10),
@@ -539,38 +726,22 @@ async function applyFilters() {
       rg('sale.order', domain, ['partner_id'], ['partner_id'], 2000),
       sr('sale.order', domain, ['name','company_id','user_id','date_order','amount_total','currency_id','state','partner_id'], 50, 'date_order desc'),
     ]);
-
     stTimers.forEach(clearTimeout);
     STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step done'; e.textContent=`✓ ${STEP_LABELS[i]}`; });
-
-    const total   = totalRows[0]?.__count || 0;
-    const rev     = totalRows[0]?.amount_untaxed || 0;
-    const avgVal  = total ? rev / total : 0;
-    const uniqueC = byPartner.length;
-
-    document.getElementById('fcnt').textContent = `${total.toLocaleString()} total orders`;
-    render({ total, rev, avgVal, uniqueC, byMonth, byState, byCompany, bySalesperson, recent }, from, to);
-    document.getElementById('loading').style.display='none';
+    const total=totalRows[0]?.__count||0;
+    const rev=totalRows[0]?.amount_untaxed||0;
+    document.getElementById('fcnt').textContent=`${total.toLocaleString()} total orders`;
+    renderSales({total,rev,avgVal:total?rev/total:0,uniqueC:byPartner.length,byMonth,byState,byCompany,bySalesperson,recent},from,to);
+    document.getElementById('s-loading').style.display='none';
     document.getElementById('dash').style.display='block';
-    setSt('live', total, total);
   } catch(e) {
     stTimers.forEach(clearTimeout);
-    document.getElementById('loading').style.display='none';
+    document.getElementById('s-loading').style.display='none';
     document.getElementById('err-bar').style.display='flex';
-    document.getElementById('err-msg').textContent = e.message||'Failed to load data';
-    setSt('error');
+    document.getElementById('err-msg').textContent=e.message||'Failed to load data';
   } finally { document.getElementById('btn-apply').disabled=false; }
 }
 
-function setSt(state, shown, total) {
-  const d=document.getElementById('st-dot'), t=document.getElementById('st-txt');
-  if(state==='loading'){d.style.background='#f59e0b';t.style.color='#f59e0b';t.textContent='Fetching…';}
-  else if(state==='live'){d.style.background='#10b981';t.style.color='#10b981';t.textContent=`Live · ${(total||0).toLocaleString()} orders`;}
-  else if(state==='error'){d.style.background='#ef4444';t.style.color='#ef4444';t.textContent='Error';}
-  else{d.style.background='#d1d5db';t.style.color='#9ca3af';t.textContent='Ready';}
-}
-
-// ── FORMAT ────────────────────────────────────────────────────
 function fmt(n){
   if(n==null||isNaN(n))return'—';
   if(n>=1e9)return(n/1e9).toFixed(2)+'B';
@@ -579,80 +750,266 @@ function fmt(n){
   return Math.round(n).toLocaleString();
 }
 
-// ── RENDER ────────────────────────────────────────────────────
-function render(data, from, to) {
-  const { total, rev, avgVal, uniqueC, byMonth, byState, byCompany, bySalesperson, recent } = data;
-
-  document.getElementById('month-sub').textContent = from+' → '+to+` (${total.toLocaleString()} orders)`;
-  document.getElementById('rec-sub').textContent = `Latest ${recent.length}`;
-
-  // ── KPIs ──
-  const C4=['#6366f1','#10b981','#f59e0b','#8b5cf6'];
-  const IC=['💰','📦','📈','👥'];
-  const KD=[
-    {l:'Total Revenue',    v:fmt(rev),                  s:'Confirmed + Done'},
-    {l:'Total Orders',     v:total.toLocaleString(),     s:'All matched orders'},
-    {l:'Avg Order Value',  v:fmt(avgVal),                s:'Per order'},
-    {l:'Unique Customers', v:uniqueC.toLocaleString(),   s:'In period'},
-  ];
-  document.getElementById('kpis').innerHTML = KD.map((k,i)=>`
-    <div class="kpi" style="border-top:3px solid ${C4[i]}">
-      <div class="kpi-top">
-        <div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>
-        <div class="kpi-ico" style="background:${C4[i]}22">${IC[i]}</div>
-      </div>
-    </div>`).join('');
-
-  // Destroy old charts
+function renderSales(data,from,to) {
+  const {total,rev,avgVal,uniqueC,byMonth,byState,byCompany,bySalesperson,recent}=data;
+  document.getElementById('month-sub').textContent=from+' → '+to+` (${total.toLocaleString()} orders)`;
+  document.getElementById('rec-sub').textContent=`Latest ${recent.length}`;
+  const C4=['#6366f1','#10b981','#f59e0b','#8b5cf6'],IC=['💰','📦','📈','👥'];
+  document.getElementById('kpis').innerHTML=[
+    {l:'Total Revenue',v:fmt(rev),s:'Confirmed + Done'},
+    {l:'Total Orders',v:total.toLocaleString(),s:'All matched orders'},
+    {l:'Avg Order Value',v:fmt(avgVal),s:'Per order'},
+    {l:'Unique Customers',v:uniqueC.toLocaleString(),s:'In period'},
+  ].map((k,i)=>`<div class="kpi" style="border-top:3px solid ${C4[i]}"><div class="kpi-top"><div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div><div class="kpi-ico" style="background:${C4[i]}22">${IC[i]}</div></div></div>`).join('');
   Object.values(CH).forEach(c=>c.destroy()); CH={};
   const CC=['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
-
-  // ── Revenue by Month ──
-  const months = byMonth.map(r=>({
-    m: r.date_order,
-    r: r.amount_untaxed||0,
-    c: r.__count||0
-  }));
+  const months=byMonth.map(r=>({m:r.date_order,r:r.amount_untaxed||0}));
   CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
-
-  // ── Order Status ──
-  const saleCount = byState.find(r=>r.state==='sale')?.__count||0;
-  const doneCount = byState.find(r=>r.state==='done')?.__count||0;
-  CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[saleCount,doneCount],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
-
-  // ── Revenue by Company ──
-  const coList = byCompany.map(r=>({
-    n: Array.isArray(r.company_id)?r.company_id[1]:(r.company_id||'Unknown'),
-    r: r.amount_untaxed||0,
-    c: r.__count||0
-  })).sort((a,b)=>b.r-a.r).slice(0,10);
+  CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[byState.find(r=>r.state==='sale')?.__count||0,byState.find(r=>r.state==='done')?.__count||0],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
+  const coList=byCompany.map(r=>({n:Array.isArray(r.company_id)?r.company_id[1]:'Unknown',r:r.amount_untaxed||0,c:r.__count||0})).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.co=new Chart(document.getElementById('ch-co'),{type:'bar',data:{labels:coList.map(c=>c.n.length>24?c.n.slice(0,24)+'…':c.n),datasets:[{label:'Revenue',data:coList.map(c=>c.r),backgroundColor:CC.slice(0,coList.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:()=>'',label:c=>coList[c.dataIndex].n+': '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
-
-  // ── Top Salespeople ──
-  const spList = bySalesperson.map(r=>({
-    n: Array.isArray(r.user_id)?r.user_id[1]:(r.user_id||'Unassigned'),
-    r: r.amount_untaxed||0,
-    c: r.__count||0
-  })).sort((a,b)=>b.r-a.r).slice(0,10);
+  const spList=bySalesperson.map(r=>({n:Array.isArray(r.user_id)?r.user_id[1]:'Unassigned',r:r.amount_untaxed||0,c:r.__count||0})).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.sp=new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:spList.slice(0,8).map(s=>s.n),datasets:[{label:'Revenue',data:spList.slice(0,8).map(s=>s.r),backgroundColor:'#10b981',borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
-
-  // ── Tables ──
   document.getElementById('t-sp').innerHTML=spList.map((s,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500">${s.n}</td><td style="color:#6b7280">${s.c}</td><td class="rvg">${fmt(s.r)}</td></tr>`).join('');
   document.getElementById('t-co').innerHTML=coList.map((c,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500" title="${c.n}">${c.n}</td><td style="color:#6b7280">${c.c}</td><td class="rv">${fmt(c.r)}</td></tr>`).join('');
+  document.getElementById('t-rec').innerHTML=recent.map(o=>{const s=o.state==='sale';return`<tr><td class="on">${o.name}</td><td title="${Array.isArray(o.partner_id)?o.partner_id[1]:''}">${Array.isArray(o.partner_id)?o.partner_id[1]:'—'}</td><td style="color:#6b7280;font-size:11px">${Array.isArray(o.company_id)?o.company_id[1]:'—'}</td><td>${Array.isArray(o.user_id)?o.user_id[1]:'—'}</td><td style="color:#9ca3af">${(o.date_order||'').slice(0,10)}</td><td style="font-weight:600">${Array.isArray(o.currency_id)?o.currency_id[1]:''} ${fmt(parseFloat(o.amount_total)||0)}</td><td><span class="badge ${s?'bs':'bd'}">${s?'Confirmed':'Done'}</span></td></tr>`;}).join('');
+}
 
-  // ── Recent Orders ──
-  document.getElementById('t-rec').innerHTML=recent.map(o=>{
-    const s=o.state==='sale';
-    return `<tr>
-      <td class="on">${o.name}</td>
-      <td title="${Array.isArray(o.partner_id)?o.partner_id[1]:''}">${Array.isArray(o.partner_id)?o.partner_id[1]:'—'}</td>
-      <td style="color:#6b7280;font-size:11px" title="${Array.isArray(o.company_id)?o.company_id[1]:''}">${Array.isArray(o.company_id)?o.company_id[1]:'—'}</td>
-      <td>${Array.isArray(o.user_id)?o.user_id[1]:'—'}</td>
-      <td style="color:#9ca3af">${(o.date_order||'').slice(0,10)}</td>
-      <td style="font-weight:600">${Array.isArray(o.currency_id)?o.currency_id[1]:''} ${fmt(parseFloat(o.amount_total)||0)}</td>
-      <td><span class="badge ${s?'bs':'bd'}">${s?'Confirmed':'Done'}</span></td>
-    </tr>`;
-  }).join('');
+// ══════════════════════════════════════════════════════════════
+// PRODUCT INFO
+// ══════════════════════════════════════════════════════════════
+async function searchProducts() {
+  const q = document.getElementById('p-search-input').value.trim();
+  if(!q) return;
+  document.getElementById('p-idle').style.display='none';
+  document.getElementById('p-loading').style.display='block';
+  document.getElementById('p-results').innerHTML='';
+  try {
+    const domain=[['active','=',true],'|',['name','ilike',q],['default_code','ilike',q]];
+    const prods = await sr('product.template', domain,
+      ['name','list_price','uom_id','categ_id','default_code','description_sale','type'],
+      40, 'name asc');
+    document.getElementById('p-loading').style.display='none';
+    if(!prods.length){
+      document.getElementById('p-results').innerHTML=`<div class="p-empty">No products found for "<strong>${q}</strong>"</div>`;
+      return;
+    }
+    document.getElementById('p-results').innerHTML = prods.map(p=>`
+      <div class="p-card" onclick='showProduct(${JSON.stringify(p)})'>
+        <div class="p-card-code">${p.default_code||'—'}</div>
+        <div class="p-card-name">${p.name}</div>
+        <div class="p-card-price">AED ${(p.list_price||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="p-card-tags">
+          ${p.uom_id?`<span class="p-tag">📐 ${p.uom_id[1]}</span>`:''}
+          ${p.categ_id?`<span class="p-tag">🏷 ${p.categ_id[1]}</span>`:''}
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('p-loading').style.display='none';
+    document.getElementById('p-results').innerHTML=`<div class="p-empty">Error: ${e.message}</div>`;
+  }
+}
+
+function showProduct(p) {
+  document.getElementById('m-name').textContent = p.name;
+  document.getElementById('m-code').textContent = p.default_code ? `Code: ${p.default_code}` : '';
+  document.getElementById('m-price').textContent = `AED ${(p.list_price||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const fields = [
+    p.uom_id      ? ['Unit of Measure', p.uom_id[1]]      : null,
+    p.categ_id    ? ['Category',        p.categ_id[1]]     : null,
+    p.type        ? ['Type',            ({consu:'Consumable',service:'Service',product:'Storable'})[p.type]||p.type] : null,
+  ].filter(Boolean);
+  document.getElementById('m-grid').innerHTML = fields.map(([l,v])=>`
+    <div class="modal-field">
+      <div class="modal-field-lbl">${l}</div>
+      <div class="modal-field-val">${v}</div>
+    </div>`).join('');
+  const desc = p.description_sale;
+  if(desc) {
+    document.getElementById('m-desc').textContent=desc;
+    document.getElementById('m-desc-wrap').style.display='block';
+  } else {
+    document.getElementById('m-desc-wrap').style.display='none';
+  }
+  document.getElementById('prod-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if(e.target===document.getElementById('prod-modal'))
+    document.getElementById('prod-modal').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════════
+// QUOTATION
+// ══════════════════════════════════════════════════════════════
+let lineId=0;
+function addLine() {
+  const id = ++lineId;
+  qLines.push({id, productId:null, productName:'', price:0, qty:1});
+  renderLines();
+}
+function removeLine(id) {
+  qLines = qLines.filter(l=>l.id!==id);
+  renderLines();
+}
+function renderLines() {
+  document.getElementById('q-lines-body').innerHTML = qLines.map(l=>`
+    <div class="q-line" id="ql-${l.id}">
+      <div class="q-product-drop" style="position:relative">
+        <input type="text" placeholder="Type to search product…" value="${l.productName}"
+          id="qp-${l.id}"
+          oninput="searchQProduct(${l.id},this.value)"
+          autocomplete="off"
+          style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;width:100%;outline:none;font-family:inherit"/>
+        <div class="q-pdrop" id="qpdrop-${l.id}"></div>
+      </div>
+      <input type="number" value="${l.price}" id="qprice-${l.id}" readonly
+        style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#f9fafb;color:#374151;outline:none"/>
+      <input type="number" value="${l.qty}" min="1" id="qqty-${l.id}"
+        oninput="updateQty(${l.id},this.value)"
+        style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit"/>
+      <button class="btn-del-line" onclick="removeLine(${l.id})">×</button>
+    </div>`).join('');
+  calcTotals();
+}
+
+let searchTimers={};
+async function searchQProduct(lineId, query) {
+  clearTimeout(searchTimers[lineId]);
+  const drop = document.getElementById(`qpdrop-${lineId}`);
+  if(!query||query.length<2) { drop.classList.remove('open'); return; }
+  searchTimers[lineId] = setTimeout(async()=>{
+    try {
+      const domain=[['active','=',true],'|',['name','ilike',query],['default_code','ilike',query]];
+      const prods = await sr('product.template', domain, ['id','name','list_price','default_code','uom_id'], 10, 'name asc');
+      drop.innerHTML = prods.map(p=>`
+        <div class="q-pdrop-item" onclick="selectQProduct(${lineId},${p.id},'${p.name.replace(/'/g,"\\'")}',${p.list_price||0},'${p.uom_id?p.uom_id[1]:''}')">
+          ${p.name}
+          <small>${p.default_code?p.default_code+' · ':''}AED ${(p.list_price||0).toFixed(2)} · ${p.uom_id?p.uom_id[1]:''}</small>
+        </div>`).join('') || '<div class="q-pdrop-item" style="color:#9ca3af">No results</div>';
+      drop.classList.add('open');
+    } catch(e){}
+  }, 300);
+}
+
+function selectQProduct(lid, pid, name, price, uom) {
+  const line = qLines.find(l=>l.id===lid);
+  if(!line) return;
+  line.productId=pid; line.productName=name; line.price=price; line.uom=uom;
+  document.getElementById(`qp-${lid}`).value=name;
+  document.getElementById(`qprice-${lid}`).value=price.toFixed(2);
+  document.getElementById(`qpdrop-${lid}`).classList.remove('open');
+  calcTotals();
+}
+
+function updateQty(lid, val) {
+  const line=qLines.find(l=>l.id===lid);
+  if(line) { line.qty=parseFloat(val)||1; calcTotals(); }
+}
+
+function calcTotals() {
+  const sub = qLines.reduce((s,l)=>s+(l.price*(parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty))||0),0);
+  document.getElementById('q-subtotal').textContent = sub.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('q-total').textContent = sub.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// Close product dropdowns on outside click
+document.addEventListener('mousedown', e=>{
+  document.querySelectorAll('.q-pdrop.open').forEach(d=>{
+    if(!d.parentElement.contains(e.target)) d.classList.remove('open');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+// PDF GENERATION
+// ══════════════════════════════════════════════════════════════
+function generatePDF() {
+  const custName = document.getElementById('ss-cust-t').textContent.replace('▼','').trim();
+  const coName   = document.getElementById('ss-qco-t').textContent.replace('▼','').trim();
+  const qDate    = document.getElementById('q-date').value;
+  const qValid   = document.getElementById('q-valid').value;
+  const notes    = document.getElementById('q-notes').value;
+
+  if(!selCust) { alert('Please select a customer.'); return; }
+  if(qLines.length===0) { alert('Please add at least one product.'); return; }
+
+  // Collect current lines
+  const lines = qLines.map(l=>{
+    const qty = parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty)||1;
+    const price = l.price||0;
+    return {...l, qty, total: qty*price};
+  }).filter(l=>l.productName);
+
+  if(!lines.length) { alert('Please select products for the lines.'); return; }
+
+  const subtotal = lines.reduce((s,l)=>s+l.total,0);
+  const qNum = 'QT-'+Date.now().toString().slice(-6);
+
+  const html=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#111827;font-size:13px;padding:40px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #6366f1}
+  .co-name{font-size:22px;font-weight:800;color:#6366f1}
+  .co-sub{font-size:12px;color:#6b7280;margin-top:4px}
+  .qt-info{text-align:right}
+  .qt-num{font-size:20px;font-weight:700;color:#111827}
+  .qt-date{font-size:12px;color:#6b7280;margin-top:4px}
+  .bill-row{display:flex;gap:48px;margin-bottom:28px}
+  .bill-box h4{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  .bill-box .val{font-size:14px;font-weight:600;color:#111827}
+  .bill-box .sub{font-size:12px;color:#6b7280;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-bottom:24px}
+  th{background:#f9fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #e5e7eb}
+  td{padding:12px 14px;border-bottom:1px solid #f3f4f6;color:#374151}
+  tr:last-child td{border-bottom:none}
+  .text-right{text-align:right}
+  .total-box{margin-left:auto;width:280px}
+  .total-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+  .total-row:last-child{border-bottom:none;font-size:16px;font-weight:700;color:#6366f1;padding-top:12px}
+  .notes-box{background:#f9fafb;border-radius:8px;padding:14px;font-size:12px;color:#6b7280;margin-bottom:24px;line-height:1.6}
+  .footer{text-align:center;font-size:11px;color:#9ca3af;padding-top:24px;border-top:1px solid #e5e7eb;margin-top:32px}
+</style>
+</head><body>
+<div class="header">
+  <div>
+    <div class="co-name">${coName!=='Select Company'?coName:'Al Sweer Group'}</div>
+    <div class="co-sub">Professional Quotation</div>
+  </div>
+  <div class="qt-info">
+    <div class="qt-num">Quotation ${qNum}</div>
+    <div class="qt-date">Date: ${qDate}</div>
+    <div class="qt-date">Valid Until: ${qValid}</div>
+  </div>
+</div>
+<div class="bill-row">
+  <div class="bill-box">
+    <h4>Bill To</h4>
+    <div class="val">${custName}</div>
+  </div>
+</div>
+<table>
+  <thead><tr><th>#</th><th>Product</th><th class="text-right">Unit Price (AED)</th><th class="text-right">Qty</th><th class="text-right">Total (AED)</th></tr></thead>
+  <tbody>
+    ${lines.map((l,i)=>`<tr><td>${i+1}</td><td><strong>${l.productName}</strong></td><td class="text-right">${l.price.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="text-right">${l.qty}</td><td class="text-right"><strong>${l.total.toLocaleString('en',{minimumFractionDigits:2})}</strong></td></tr>`).join('')}
+  </tbody>
+</table>
+<div style="display:flex;justify-content:flex-end">
+  <div class="total-box">
+    <div class="total-row"><span>Subtotal</span><span>AED ${subtotal.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
+    <div class="total-row"><span><strong>Total</strong></span><span><strong>AED ${subtotal.toLocaleString('en',{minimumFractionDigits:2})}</strong></span></div>
+  </div>
+</div>
+${notes?`<div style="margin-top:24px"><div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:8px">Notes</div><div class="notes-box">${notes}</div></div>`:''}
+<div class="footer">This quotation is valid until ${qValid}. For queries, please contact us.<br/>Generated by Al Sweer Portal</div>
+</body></html>`;
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>{ w.print(); }, 600);
 }
 </script>
 </body>
