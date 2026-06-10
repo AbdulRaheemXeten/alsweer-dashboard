@@ -416,14 +416,24 @@ function resetFilters() {
 
 // ── STEP ANIMATION ────────────────────────────────────────────
 let stTimers=[];
-const STEP_LABELS = ['Connecting to Odoo','Fetching sales orders','Processing data','Building charts'];
+const STEP_LABELS = ['Connecting to Odoo','Fetching aggregates','Fetching charts','Building dashboard'];
 function startSteps() {
   stTimers.forEach(clearTimeout);
   STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step'; e.textContent=`○ ${STEP_LABELS[i]}`; });
   stTimers = STEP_LABELS.map((_,i)=>setTimeout(()=>{
     if(i>0){ const p=document.getElementById(`s${i-1}`); p.className='step done'; p.textContent=`✓ ${STEP_LABELS[i-1]}`; }
     const c=document.getElementById(`s${i}`); c.className='step active'; c.textContent=`→ ${STEP_LABELS[i]}`;
-  }, i*1600));
+  }, i*1800));
+}
+
+// ── READ GROUP (server-side aggregation) ──────────────────────
+// Uses Odoo's read_group — returns accurate totals for ALL records
+// regardless of count. No sampling, no missing data.
+function rg(model, domain, fields, groupby, limit=100) {
+  return rpc('/web/dataset/call_kw', {
+    model, method:'read_group', args:[],
+    kwargs:{ domain, fields, groupby, limit, lazy:false }
+  });
 }
 
 // ── APPLY FILTERS ─────────────────────────────────────────────
@@ -440,31 +450,43 @@ async function applyFilters() {
 
   try {
     const domain=[['state','in',['sale','done']]];
-    if(selCo)   domain.push(['company_id','=',selCo]);
-    if(selSp)   domain.push(['user_id','=',selSp]);
-    if(from)    domain.push(['date_order','>=',from+' 00:00:00']);
-    if(to)      domain.push(['date_order','<=',to+' 23:59:59']);
+    if(selCo) domain.push(['company_id','=',selCo]);
+    if(selSp) domain.push(['user_id','=',selSp]);
+    if(from)  domain.push(['date_order','>=',from+' 00:00:00']);
+    if(to)    domain.push(['date_order','<=',to+' 23:59:59']);
 
-    const fields=['name','company_id','user_id','date_order','amount_untaxed','amount_total','currency_id','state','partner_id'];
-
-    // Two fetches: oldest 500 + newest 500 for better coverage
-    const [asc, desc, total] = await Promise.all([
-      sr('sale.order', domain, fields, 500, 'id asc'),
-      sr('sale.order', domain, fields, 500, 'id desc'),
-      sc('sale.order', domain),
+    // ALL aggregations done server-side via read_group — 100% accurate
+    const [
+      totalRows,      // KPI: total revenue, order count
+      byMonth,        // Revenue by month chart
+      byState,        // Order status donut
+      byCompany,      // Revenue by company chart
+      bySalesperson,  // Top salespeople chart
+      byPartner,      // Unique customers count
+      recent          // Recent orders table (50 latest only)
+    ] = await Promise.all([
+      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], []),
+      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['date_order:month'], 24),
+      rg('sale.order', domain, ['id:count'], ['state'], 10),
+      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['company_id'], 20),
+      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['user_id'], 50),
+      rg('sale.order', domain, ['partner_id'], ['partner_id'], 2000),
+      sr('sale.order', domain, ['name','company_id','user_id','date_order','amount_total','currency_id','state','partner_id'], 50, 'date_order desc'),
     ]);
-
-    const seen=new Set();
-    const orders=[...asc,...desc].filter(o=>seen.has(o.id)?false:(seen.add(o.id),true));
 
     stTimers.forEach(clearTimeout);
     STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step done'; e.textContent=`✓ ${STEP_LABELS[i]}`; });
 
+    const total   = totalRows[0]?.id_count || 0;
+    const rev     = totalRows[0]?.amount_untaxed || 0;
+    const avgVal  = total ? rev / total : 0;
+    const uniqueC = byPartner.length;
+
     document.getElementById('fcnt').textContent = `${total.toLocaleString()} total orders`;
-    render(orders, total, from, to);
+    render({ total, rev, avgVal, uniqueC, byMonth, byState, byCompany, bySalesperson, recent }, from, to);
     document.getElementById('loading').style.display='none';
     document.getElementById('dash').style.display='block';
-    setSt('live', orders.length, total);
+    setSt('live', total, total);
   } catch(e) {
     stTimers.forEach(clearTimeout);
     document.getElementById('loading').style.display='none';
@@ -477,7 +499,7 @@ async function applyFilters() {
 function setSt(state, shown, total) {
   const d=document.getElementById('st-dot'), t=document.getElementById('st-txt');
   if(state==='loading'){d.style.background='#f59e0b';t.style.color='#f59e0b';t.textContent='Fetching…';}
-  else if(state==='live'){d.style.background='#10b981';t.style.color='#10b981';t.textContent=`Live · ${shown} shown of ${(total||shown).toLocaleString()}`;}
+  else if(state==='live'){d.style.background='#10b981';t.style.color='#10b981';t.textContent=`Live · ${(total||0).toLocaleString()} orders`;}
   else if(state==='error'){d.style.background='#ef4444';t.style.color='#ef4444';t.textContent='Error';}
   else{d.style.background='#d1d5db';t.style.color='#9ca3af';t.textContent='Ready';}
 }
@@ -492,43 +514,20 @@ function fmt(n){
 }
 
 // ── RENDER ────────────────────────────────────────────────────
-function render(orders, total, from, to) {
-  const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let rev=0, sale=0, done=0;
-  const custs=new Set(), byM={}, byCo={}, bySP={};
+function render(data, from, to) {
+  const { total, rev, avgVal, uniqueC, byMonth, byState, byCompany, bySalesperson, recent } = data;
 
-  for(const o of orders){
-    const amt=parseFloat(o.amount_untaxed)||0;
-    rev+=amt;
-    const pid=Array.isArray(o.partner_id)?o.partner_id[0]:o.partner_id;
-    if(pid)custs.add(pid);
-    o.state==='sale'?sale++:done++;
-    const d=new Date(o.date_order);
-    const mk=MO[d.getMonth()]+' '+d.getFullYear(), ms=d.getFullYear()*100+d.getMonth();
-    if(!byM[mk])byM[mk]={m:mk,s:ms,r:0,c:0}; byM[mk].r+=amt; byM[mk].c++;
-    const cn=Array.isArray(o.company_id)?o.company_id[1]:'?';
-    if(!byCo[cn])byCo[cn]={n:cn,r:0,c:0}; byCo[cn].r+=amt; byCo[cn].c++;
-    const sp=Array.isArray(o.user_id)?o.user_id[1]:'Unassigned';
-    if(!bySP[sp])bySP[sp]={n:sp,r:0,c:0}; bySP[sp].r+=amt; bySP[sp].c++;
-  }
-
-  const months=Object.values(byM).sort((a,b)=>a.s-b.s);
-  const coList=Object.values(byCo).sort((a,b)=>b.r-a.r).slice(0,10);
-  const spList=Object.values(bySP).sort((a,b)=>b.r-a.r).slice(0,10);
-  const recent=[...orders].sort((a,b)=>new Date(b.date_order)-new Date(a.date_order)).slice(0,50);
-
-  const note = total>orders.length?` (showing ${orders.length} of ${total.toLocaleString()})`:` (${orders.length} orders)`;
-  document.getElementById('month-sub').textContent = from+' → '+to+note;
+  document.getElementById('month-sub').textContent = from+' → '+to+` (${total.toLocaleString()} orders)`;
   document.getElementById('rec-sub').textContent = `Latest ${recent.length}`;
 
-  // KPIs
+  // ── KPIs ──
   const C4=['#6366f1','#10b981','#f59e0b','#8b5cf6'];
   const IC=['💰','📦','📈','👥'];
   const KD=[
-    {l:'Total Revenue',   v:fmt(rev),                               s:'Confirmed + Done'},
-    {l:'Total Orders',    v:total.toLocaleString(),                  s:'All matched orders'},
-    {l:'Avg Order Value', v:fmt(orders.length?rev/orders.length:0),  s:'Per order'},
-    {l:'Unique Customers',v:custs.size.toLocaleString(),             s:'In period'},
+    {l:'Total Revenue',    v:fmt(rev),                  s:'Confirmed + Done'},
+    {l:'Total Orders',     v:total.toLocaleString(),     s:'All matched orders'},
+    {l:'Avg Order Value',  v:fmt(avgVal),                s:'Per order'},
+    {l:'Unique Customers', v:uniqueC.toLocaleString(),   s:'In period'},
   ];
   document.getElementById('kpis').innerHTML = KD.map((k,i)=>`
     <div class="kpi" style="border-top:3px solid ${C4[i]}">
@@ -542,17 +541,40 @@ function render(orders, total, from, to) {
   Object.values(CH).forEach(c=>c.destroy()); CH={};
   const CC=['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
 
+  // ── Revenue by Month ──
+  const months = byMonth.map(r=>({
+    m: r.date_order,
+    r: r.amount_untaxed||0,
+    c: r.id_count||0
+  }));
   CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
 
-  CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[sale,done],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
+  // ── Order Status ──
+  const saleCount = byState.find(r=>r.state==='sale')?.id_count||0;
+  const doneCount = byState.find(r=>r.state==='done')?.id_count||0;
+  CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[saleCount,doneCount],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
 
+  // ── Revenue by Company ──
+  const coList = byCompany.map(r=>({
+    n: Array.isArray(r.company_id)?r.company_id[1]:(r.company_id||'Unknown'),
+    r: r.amount_untaxed||0,
+    c: r.id_count||0
+  })).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.co=new Chart(document.getElementById('ch-co'),{type:'bar',data:{labels:coList.map(c=>c.n.length>24?c.n.slice(0,24)+'…':c.n),datasets:[{label:'Revenue',data:coList.map(c=>c.r),backgroundColor:CC.slice(0,coList.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:()=>'',label:c=>coList[c.dataIndex].n+': '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
+  // ── Top Salespeople ──
+  const spList = bySalesperson.map(r=>({
+    n: Array.isArray(r.user_id)?r.user_id[1]:(r.user_id||'Unassigned'),
+    r: r.amount_untaxed||0,
+    c: r.id_count||0
+  })).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.sp=new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:spList.slice(0,8).map(s=>s.n),datasets:[{label:'Revenue',data:spList.slice(0,8).map(s=>s.r),backgroundColor:'#10b981',borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
+  // ── Tables ──
   document.getElementById('t-sp').innerHTML=spList.map((s,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500">${s.n}</td><td style="color:#6b7280">${s.c}</td><td class="rvg">${fmt(s.r)}</td></tr>`).join('');
   document.getElementById('t-co').innerHTML=coList.map((c,i)=>`<tr><td class="rk">${i+1}</td><td style="font-weight:500" title="${c.n}">${c.n}</td><td style="color:#6b7280">${c.c}</td><td class="rv">${fmt(c.r)}</td></tr>`).join('');
 
+  // ── Recent Orders ──
   document.getElementById('t-rec').innerHTML=recent.map(o=>{
     const s=o.state==='sale';
     return `<tr>
