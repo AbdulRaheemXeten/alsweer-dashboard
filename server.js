@@ -1,72 +1,48 @@
 // ─── SECURE SERVER.JS ────────────────────────────────────────────────────────
-// Fixes applied:
-//   1. Removed NODE_TLS_REJECT_UNAUTHORIZED = '0'  (SSL now properly verified)
-//   2. Rate limiting on all routes + strict limit on login attempts
-//   3. Security headers via helmet
-//   4. Request size reduced (10mb → 1mb)
-//   5. Blocks dangerous Odoo paths (db manager, admin, shell)
-//   6. Strips internal Render/server headers from responses
-//   7. Cookie security flags enforced (HttpOnly, SameSite, Secure)
-//   8. Timeout on all Odoo requests (10 seconds)
-//   9. Only allows whitelisted Odoo API paths
-// ─────────────────────────────────────────────────────────────────────────────
 
-const express     = require('express');
-const fetch       = require('node-fetch');
-const path        = require('path');
-const rateLimit   = require('express-rate-limit');
-const helmet      = require('helmet');
+const express   = require('express');
+const fetch     = require('node-fetch');
+const path      = require('path');
+const rateLimit = require('express-rate-limit');
+const helmet    = require('helmet');
 
 const app      = express();
 const PORT     = process.env.PORT || 3000;
 const ODOO_URL = process.env.ODOO_URL || 'https://alsweer-staging-2-32438275.dev.odoo.com';
 
-// ── 1. SECURITY HEADERS ───────────────────────────────────────────────────────
-// Adds: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, HSTS, etc.
+// ── TRUST PROXY ───────────────────────────────────────────────────────────────
+// Required on Render — without this, rate-limit throws an error silently
+app.set('trust proxy', 1);
+
+// ── SECURITY HEADERS ──────────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      styleSrc:    ["'self'", "'unsafe-inline'"],
-      connectSrc:  ["'self'"],
-      imgSrc:      ["'self'", "data:"],
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      styleSrc:   ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
+      imgSrc:     ["'self'", "data:"],
     }
   },
-  frameguard: { action: 'deny' },   // X-Frame-Options: DENY (prevents clickjacking)
+  frameguard: { action: 'deny' },
 }));
 
-// ── 2. RATE LIMITING ──────────────────────────────────────────────────────────
-
-// General limit: 100 requests per 15 minutes per IP
-const generalLimiter = rateLimit({
-  windowMs:  15 * 60 * 1000,
-  max:       100,
+// ── RATE LIMITING ─────────────────────────────────────────────────────────────
+// General: 200 requests per 15 min per IP
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   standardHeaders: true,
-  legacyHeaders:   false,
+  legacyHeaders: false,
   message: { error: { message: 'Too many requests. Please wait and try again.' } }
-});
+}));
 
-// Strict login limit: 10 attempts per 15 minutes per IP
-// Prevents brute-force password attacks
-const loginLimiter = rateLimit({
-  windowMs:  15 * 60 * 1000,
-  max:       10,
-  standardHeaders: true,
-  legacyHeaders:   false,
-  message: { error: { message: 'Too many login attempts. Please wait 15 minutes.' } }
-});
-
-app.use(generalLimiter);
-
-// ── 3. BODY LIMIT ─────────────────────────────────────────────────────────────
-// Reduced from 10mb to 1mb — dashboard only sends small JSON payloads
+// ── BODY + STATIC ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── 4. BLOCKED PATHS ──────────────────────────────────────────────────────────
-// Blocks access to sensitive Odoo endpoints that should never be exposed
-// NOTE: /web/database/list is allowed (needed for login), only block the rest
+// ── BLOCKED PATHS ─────────────────────────────────────────────────────────────
 const BLOCKED_PATHS = [
   '/web/database/manager',
   '/web/database/create',
@@ -74,15 +50,12 @@ const BLOCKED_PATHS = [
   '/web/database/backup',
   '/web/database/restore',
   '/web/database/duplicate',
-  '/odoo/action-base_setup',
   '/web/webclient/version_info',
   '/_odoo/support',
   '/web/tests',
-  '/base_import',
 ];
 
-// ── 5. ALLOWED ODOO API PATHS (whitelist) ─────────────────────────────────────
-// Only these paths are allowed through — everything else is blocked
+// ── ALLOWED PATHS (whitelist) ─────────────────────────────────────────────────
 const ALLOWED_PATHS = [
   '/web/session/authenticate',
   '/web/session/destroy',
@@ -92,57 +65,62 @@ const ALLOWED_PATHS = [
   '/web/action/load',
 ];
 
-// ── 6. HELPER: PROXY TO ODOO ──────────────────────────────────────────────────
+// ── LOGIN RATE LIMITER ────────────────────────────────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many login attempts. Please wait 15 minutes.' } }
+});
+
+// ── COOKIE SECURITY ───────────────────────────────────────────────────────────
+function secureCookie(c) {
+  return c
+    .replace(/;\s*HttpOnly/gi, '')
+    .replace(/;\s*SameSite=[^;]*/gi, '')
+    .replace(/;\s*Secure/gi, '')
+    + '; HttpOnly; SameSite=Lax; Secure';
+}
+
+// ── PROXY HELPER ──────────────────────────────────────────────────────────────
 async function odooPost(odooPath, body, cookieHeader) {
   const headers = { 'Content-Type': 'application/json' };
   if (cookieHeader) headers['Cookie'] = cookieHeader;
 
-  // Timeout: cancel request if Odoo takes more than 10 seconds
   const controller = new AbortController();
-  const timeout    = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
   try {
     const res = await fetch(ODOO_URL + odooPath, {
-      method:  'POST',
+      method: 'POST',
       headers,
-      body:    JSON.stringify(body),
-      signal:  controller.signal,
-      // SSL verification is now ON (no NODE_TLS_REJECT_UNAUTHORIZED bypass)
+      body: JSON.stringify(body),
+      signal: controller.signal,
     });
-    return { res, text: await res.text(), headers: res.headers };
+    const text = await res.text();
+    return { text, headers: res.headers };
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timer);
   }
 }
 
-// ── 7. SECURE COOKIE HELPER ───────────────────────────────────────────────────
-// Forces HttpOnly + SameSite=Lax + Secure on all forwarded cookies
-// NOTE: SameSite=Lax (not Strict) is required for Odoo session cookies to work
-function secureCookie(cookieStr) {
-  let c = cookieStr
-    .replace(/;\s*HttpOnly/gi,  '')
-    .replace(/;\s*SameSite=[^;]*/gi, '')
-    .replace(/;\s*Secure/gi, '');
-  c += '; HttpOnly; SameSite=Lax; Secure';
-  return c;
-}
-
-// ── 8. DB NAME ENDPOINT ───────────────────────────────────────────────────────
+// ── DB NAME ───────────────────────────────────────────────────────────────────
 app.get('/odoo/dbname', async (req, res) => {
   try {
     const { text } = await odooPost('/web/database/list', {
       jsonrpc: '2.0', method: 'call', id: 1, params: {}
     });
-    const json = JSON.parse(text);
-    res.json(json);
+    res.json(JSON.parse(text));
   } catch(e) {
-    const host = ODOO_URL.replace('https://','').split('.')[0];
+    // Fallback: derive DB name from URL
+    const host = ODOO_URL.replace('https://', '').split('.')[0];
     res.json({ result: [host] });
   }
 });
 
-// ── 9. MAIN PROXY ─────────────────────────────────────────────────────────────
-app.post('/odoo/*', (req, res, next) => {
+// ── MAIN PROXY ────────────────────────────────────────────────────────────────
+app.post('/odoo/*', async (req, res) => {
   const odooPath = req.path.replace('/odoo', '');
 
   // Block dangerous paths
@@ -150,61 +128,44 @@ app.post('/odoo/*', (req, res, next) => {
     return res.status(403).json({ error: { message: 'This endpoint is not allowed.' } });
   }
 
-  // Whitelist check — only allow known safe API paths
+  // Whitelist — only known safe paths
   if (!ALLOWED_PATHS.some(a => odooPath.startsWith(a))) {
     return res.status(403).json({ error: { message: 'This endpoint is not permitted.' } });
   }
 
-  next();
-}, async (req, res) => {
-  const odooPath = req.path.replace('/odoo', '');
-
-  // Extra strict rate limit on login endpoint
-  if (odooPath === '/web/session/authenticate') {
-    return loginLimiter(req, res, async () => {
-      await proxyToOdoo(odooPath, req, res);
-    });
+  // Extra rate limit on login
+  if (odooPath.startsWith('/web/session/authenticate')) {
+    await new Promise(resolve => loginLimiter(req, res, resolve));
+    if (res.headersSent) return; // rate limit already responded
   }
 
-  await proxyToOdoo(odooPath, req, res);
-});
-
-async function proxyToOdoo(odooPath, req, res) {
   try {
-    const { res: odooRes, text, headers } = await odooPost(
-      odooPath, req.body, req.headers.cookie
-    );
+    const { text, headers } = await odooPost(odooPath, req.body, req.headers.cookie);
 
-    // Forward session cookies with security flags enforced
+    // Forward cookies with security flags
     const setCookie = headers.raw()['set-cookie'];
     if (setCookie) {
-      setCookie
-        .map(secureCookie)
-        .forEach(c => res.append('Set-Cookie', c));
+      setCookie.map(secureCookie).forEach(c => res.append('Set-Cookie', c));
     }
 
-    // Strip server info headers
     res.removeHeader('X-Powered-By');
     res.removeHeader('Server');
 
     try {
-      const data = JSON.parse(text);
-      res.json(data);
+      res.json(JSON.parse(text));
     } catch(e) {
-      res.status(502).json({
-        error: { message: 'Odoo returned an unexpected response.' }
-      });
+      res.status(502).json({ error: { message: 'Unexpected response from Odoo.' } });
     }
-  } catch (err) {
+  } catch(err) {
     if (err.name === 'AbortError') {
-      return res.status(504).json({ error: { message: 'Odoo request timed out. Please try again.' } });
+      return res.status(504).json({ error: { message: 'Request timed out. Please try again.' } });
     }
     console.error('Proxy error:', err.message);
-    res.status(500).json({ error: { message: 'Server error. Please try again.' } });
+    res.status(500).json({ error: { message: 'Server error: ' + err.message } });
   }
-}
+});
 
-// ── 10. CATCH ALL ─────────────────────────────────────────────────────────────
+// ── CATCH ALL ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
