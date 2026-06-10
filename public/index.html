@@ -130,7 +130,73 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
 
 .empty{height:150px;display:flex;align-items:center;justify-content:center;color:#d1d5db;font-size:13px;flex-direction:column;gap:6px}
 
-@media(max-width:900px){.crow.r21,.crow.r11,.trow{grid-template-columns:1fr}}
+/* ── MOBILE RESPONSIVE ───────────────────────────────────── */
+@media(max-width:900px){
+  .crow.r21,.crow.r11,.trow{grid-template-columns:1fr}
+}
+
+@media(max-width:640px){
+  /* Login */
+  .login-box{padding:32px 20px;border-radius:16px;margin:16px}
+
+  /* Topbar */
+  .topbar{padding:0 12px;height:50px}
+  .tl-sub{display:none}
+  .tl-title{font-size:14px}
+  .user-pill{display:none}
+  .btn-sm{padding:5px 10px;font-size:11px}
+  .st{font-size:11px}
+
+  /* Main padding */
+  .main{padding:12px}
+
+  /* Filter bar — stack vertically */
+  .fbar{flex-direction:column;gap:10px;padding:14px}
+  .fg{width:100%}
+  .ss-wrap{min-width:100%;max-width:100%}
+  .ss-trigger{width:100%}
+  .ss-drop{width:100%;max-width:100%}
+  .fdate{width:100%;font-size:16px}
+  .fg:last-child{flex-direction:column!important}
+  .btn-apply{width:100%;justify-content:center;padding:12px}
+  .btn-ghost{width:100%;justify-content:center;padding:12px}
+  .fcnt{text-align:center}
+
+  /* KPI grid — 2 per row on mobile */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi{padding:14px}
+  .kpi-val{font-size:22px}
+  .kpi-ico{width:32px;height:32px;font-size:16px}
+
+  /* Charts — full width */
+  .crow.r21,.crow.r11{grid-template-columns:1fr;gap:10px}
+  .cbody canvas{max-height:200px}
+  .chead{padding:10px 14px;flex-direction:column;align-items:flex-start;gap:3px}
+  .csub{font-size:10px}
+  .cbody{padding:12px}
+
+  /* Tables — 1 col stack */
+  .trow{grid-template-columns:1fr;gap:10px}
+  .tscroll{max-height:220px}
+
+  /* Recent orders — hide Company col on small screens */
+  #t-rec tr td:nth-child(3),
+  #t-rec tr th:nth-child(3){display:none}
+  td{padding:8px 10px;font-size:11px}
+  th{padding:7px 10px;font-size:9px}
+
+  /* Step loader */
+  #loading{padding:50px 16px}
+  .step{font-size:12px}
+
+  /* Idle screen */
+  #idle{padding:60px 16px}
+  .idle-icon{font-size:40px}
+  .idle-title{font-size:16px}
+
+  /* Error bar */
+  #err-bar{font-size:12px;padding:10px 14px;flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
