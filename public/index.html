@@ -447,12 +447,23 @@ async function applyFilters() {
 
     const fields=['name','company_id','user_id','date_order','amount_untaxed','amount_total','currency_id','state','partner_id'];
 
-    // Two fetches: oldest 500 + newest 500 for better coverage
-    const [asc, desc, total] = await Promise.all([
+    // Fetch sampled orders for charts/tables + true total count + server-side revenue aggregate
+    const [asc, desc, total, revenueData] = await Promise.all([
       sr('sale.order', domain, fields, 500, 'id asc'),
       sr('sale.order', domain, fields, 500, 'id desc'),
       sc('sale.order', domain),
+      // ✅ FIX: fetch true revenue aggregate from server, not sampled sum
+      rpc('/web/dataset/call_kw', {
+        model: 'sale.order',
+        method: 'read_group',
+        args: [domain, ['amount_untaxed:sum', 'amount_total:sum'], []],
+        kwargs: {}
+      }),
     ]);
+
+    // True revenue from all orders (server-side aggregate)
+    const trueRevenue = revenueData?.[0]?.amount_untaxed || 0;
+    const trueRevenueTotal = revenueData?.[0]?.amount_total || 0;
 
     const seen=new Set();
     const orders=[...asc,...desc].filter(o=>seen.has(o.id)?false:(seen.add(o.id),true));
@@ -461,7 +472,7 @@ async function applyFilters() {
     STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step done'; e.textContent=`✓ ${STEP_LABELS[i]}`; });
 
     document.getElementById('fcnt').textContent = `${total.toLocaleString()} total orders`;
-    render(orders, total, from, to);
+    render(orders, total, from, to, trueRevenue);
     document.getElementById('loading').style.display='none';
     document.getElementById('dash').style.display='block';
     setSt('live', orders.length, total);
@@ -492,7 +503,7 @@ function fmt(n){
 }
 
 // ── RENDER ────────────────────────────────────────────────────
-function render(orders, total, from, to) {
+function render(orders, total, from, to, trueRevenue) {
   const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let rev=0, sale=0, done=0;
   const custs=new Set(), byM={}, byCo={}, bySP={};
@@ -521,14 +532,15 @@ function render(orders, total, from, to) {
   document.getElementById('month-sub').textContent = from+' → '+to+note;
   document.getElementById('rec-sub').textContent = `Latest ${recent.length}`;
 
-  // KPIs
+  // KPIs — use server-side true revenue aggregate for accuracy across all orders
+  const displayRev = trueRevenue != null ? trueRevenue : rev;
   const C4=['#6366f1','#10b981','#f59e0b','#8b5cf6'];
   const IC=['💰','📦','📈','👥'];
   const KD=[
-    {l:'Total Revenue',   v:fmt(rev),                               s:'Confirmed + Done'},
-    {l:'Total Orders',    v:total.toLocaleString(),                  s:'All matched orders'},
-    {l:'Avg Order Value', v:fmt(orders.length?rev/orders.length:0),  s:'Per order'},
-    {l:'Unique Customers',v:custs.size.toLocaleString(),             s:'In period'},
+    {l:'Total Revenue',   v:fmt(displayRev),                            s:'Confirmed + Done'},
+    {l:'Total Orders',    v:total.toLocaleString(),                      s:'All matched orders'},
+    {l:'Avg Order Value', v:fmt(total?displayRev/total:0),               s:'Per order'},
+    {l:'Unique Customers',v:custs.size.toLocaleString(),                 s:'In period (sampled)'},
   ];
   document.getElementById('kpis').innerHTML = KD.map((k,i)=>`
     <div class="kpi" style="border-top:3px solid ${C4[i]}">
