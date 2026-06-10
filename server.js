@@ -31,9 +31,9 @@ app.use(helmet({
       styleSrc:    ["'self'", "'unsafe-inline'"],
       connectSrc:  ["'self'"],
       imgSrc:      ["'self'", "data:"],
-      frameguard:  { action: 'deny' },
     }
-  }
+  },
+  frameguard: { action: 'deny' },   // X-Frame-Options: DENY (prevents clickjacking)
 }));
 
 // ── 2. RATE LIMITING ──────────────────────────────────────────────────────────
