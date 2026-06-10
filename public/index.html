@@ -465,11 +465,11 @@ async function applyFilters() {
       byPartner,      // Unique customers count
       recent          // Recent orders table (50 latest only)
     ] = await Promise.all([
-      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], []),
-      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['date_order:month'], 24),
-      rg('sale.order', domain, ['id:count'], ['state'], 10),
-      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['company_id'], 20),
-      rg('sale.order', domain, ['amount_untaxed:sum','id:count'], ['user_id'], 50),
+      rg('sale.order', domain, ['amount_untaxed:sum'], []),
+      rg('sale.order', domain, ['amount_untaxed:sum'], ['date_order:month'], 24),
+      rg('sale.order', domain, [], ['state'], 10),
+      rg('sale.order', domain, ['amount_untaxed:sum'], ['company_id'], 20),
+      rg('sale.order', domain, ['amount_untaxed:sum'], ['user_id'], 50),
       rg('sale.order', domain, ['partner_id'], ['partner_id'], 2000),
       sr('sale.order', domain, ['name','company_id','user_id','date_order','amount_total','currency_id','state','partner_id'], 50, 'date_order desc'),
     ]);
@@ -477,7 +477,7 @@ async function applyFilters() {
     stTimers.forEach(clearTimeout);
     STEP_LABELS.forEach((_,i)=>{ const e=document.getElementById(`s${i}`); e.className='step done'; e.textContent=`✓ ${STEP_LABELS[i]}`; });
 
-    const total   = totalRows[0]?.id_count || 0;
+    const total   = totalRows[0]?.__count || 0;
     const rev     = totalRows[0]?.amount_untaxed || 0;
     const avgVal  = total ? rev / total : 0;
     const uniqueC = byPartner.length;
@@ -545,20 +545,20 @@ function render(data, from, to) {
   const months = byMonth.map(r=>({
     m: r.date_order,
     r: r.amount_untaxed||0,
-    c: r.id_count||0
+    c: r.__count||0
   }));
   CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
 
   // ── Order Status ──
-  const saleCount = byState.find(r=>r.state==='sale')?.id_count||0;
-  const doneCount = byState.find(r=>r.state==='done')?.id_count||0;
+  const saleCount = byState.find(r=>r.state==='sale')?.__count||0;
+  const doneCount = byState.find(r=>r.state==='done')?.__count||0;
   CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[saleCount,doneCount],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
 
   // ── Revenue by Company ──
   const coList = byCompany.map(r=>({
     n: Array.isArray(r.company_id)?r.company_id[1]:(r.company_id||'Unknown'),
     r: r.amount_untaxed||0,
-    c: r.id_count||0
+    c: r.__count||0
   })).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.co=new Chart(document.getElementById('ch-co'),{type:'bar',data:{labels:coList.map(c=>c.n.length>24?c.n.slice(0,24)+'…':c.n),datasets:[{label:'Revenue',data:coList.map(c=>c.r),backgroundColor:CC.slice(0,coList.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:()=>'',label:c=>coList[c.dataIndex].n+': '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
@@ -566,7 +566,7 @@ function render(data, from, to) {
   const spList = bySalesperson.map(r=>({
     n: Array.isArray(r.user_id)?r.user_id[1]:(r.user_id||'Unassigned'),
     r: r.amount_untaxed||0,
-    c: r.id_count||0
+    c: r.__count||0
   })).sort((a,b)=>b.r-a.r).slice(0,10);
   CH.sp=new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:spList.slice(0,8).map(s=>s.n),datasets:[{label:'Revenue',data:spList.slice(0,8).map(s=>s.r),backgroundColor:'#10b981',borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
