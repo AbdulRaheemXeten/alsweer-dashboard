@@ -763,7 +763,28 @@ function renderSales(data,from,to) {
   ].map((k,i)=>`<div class="kpi" style="border-top:3px solid ${C4[i]}"><div class="kpi-top"><div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div><div class="kpi-ico" style="background:${C4[i]}22">${IC[i]}</div></div></div>`).join('');
   Object.values(CH).forEach(c=>c.destroy()); CH={};
   const CC=['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
-  const months=byMonth.map(r=>({m:r.date_order,r:r.amount_untaxed||0}));
+  // Odoo read_group with date:month returns the label in r.date_order
+  // It can be: "January 2026", "01/2026", "2026-01-01 00:00:00", or a range string
+  // We also need to handle the __range field which gives start date reliably
+  const months=byMonth.map(r=>{
+    let label = '';
+    // Try __range first (most reliable — gives {from:'2026-01-01', to:'2026-02-01'})
+    if(r.__range && r.__range.date_order) {
+      const d = new Date(r.__range.date_order.from);
+      if(!isNaN(d)) label = d.toLocaleString('en',{month:'short',year:'numeric'});
+    }
+    // Fallback: r.date_order is a string like "January 2026" or "2026-01-01 00:00:00"
+    if(!label && r.date_order) {
+      const s = String(r.date_order);
+      // Try parsing as date string
+      const d = new Date(s.replace(' ','T'));
+      if(!isNaN(d)) label = d.toLocaleString('en',{month:'short',year:'numeric'});
+      else label = s; // already human-readable like "January 2026"
+    }
+    return {m: label||'Unknown', r: r.amount_untaxed||0};
+  });
+  console.log('byMonth raw:', JSON.stringify(byMonth.slice(0,2)));
+  console.log('months parsed:', JSON.stringify(months.slice(0,2)));
   CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
   CH.status=new Chart(document.getElementById('ch-status'),{type:'doughnut',data:{labels:['Confirmed','Done'],datasets:[{data:[byState.find(r=>r.state==='sale')?.__count||0,byState.find(r=>r.state==='done')?.__count||0],backgroundColor:['#6366f1','#10b981'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()}`}}}}});
   const coList=byCompany.map(r=>({n:Array.isArray(r.company_id)?r.company_id[1]:'Unknown',r:r.amount_untaxed||0,c:r.__count||0})).sort((a,b)=>b.r-a.r).slice(0,10);
