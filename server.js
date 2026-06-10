@@ -66,8 +66,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── 4. BLOCKED PATHS ──────────────────────────────────────────────────────────
 // Blocks access to sensitive Odoo endpoints that should never be exposed
+// NOTE: /web/database/list is allowed (needed for login), only block the rest
 const BLOCKED_PATHS = [
-  '/web/database',     // DB manager — create/drop databases
   '/web/database/manager',
   '/web/database/create',
   '/web/database/drop',
@@ -75,7 +75,7 @@ const BLOCKED_PATHS = [
   '/web/database/restore',
   '/web/database/duplicate',
   '/odoo/action-base_setup',
-  '/web/webclient/version_info', // Reveals Odoo version info
+  '/web/webclient/version_info',
   '/_odoo/support',
   '/web/tests',
   '/base_import',
@@ -116,13 +116,14 @@ async function odooPost(odooPath, body, cookieHeader) {
 }
 
 // ── 7. SECURE COOKIE HELPER ───────────────────────────────────────────────────
-// Forces HttpOnly + SameSite=Strict + Secure on all forwarded cookies
+// Forces HttpOnly + SameSite=Lax + Secure on all forwarded cookies
+// NOTE: SameSite=Lax (not Strict) is required for Odoo session cookies to work
 function secureCookie(cookieStr) {
   let c = cookieStr
-    .replace(/;\s*HttpOnly/gi,  '')  // remove existing flags first
+    .replace(/;\s*HttpOnly/gi,  '')
     .replace(/;\s*SameSite=[^;]*/gi, '')
     .replace(/;\s*Secure/gi, '');
-  c += '; HttpOnly; SameSite=Strict; Secure';
+  c += '; HttpOnly; SameSite=Lax; Secure';
   return c;
 }
 
