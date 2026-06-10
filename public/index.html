@@ -763,39 +763,51 @@ function renderSales(data,from,to) {
   ].map((k,i)=>`<div class="kpi" style="border-top:3px solid ${C4[i]}"><div class="kpi-top"><div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div><div class="kpi-ico" style="background:${C4[i]}22">${IC[i]}</div></div></div>`).join('');
   Object.values(CH).forEach(c=>c.destroy()); CH={};
   const CC=['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
-  // Odoo read_group returns date label in r.date_order as "MM/YYYY" or "Month YYYY"
-  // Also try extracting from __domain which always has the date range
   const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const months=byMonth.map((r,i)=>{
-    let label = '';
+  // Parse month label from every possible Odoo read_group format
+  function parseMonthLabel(r, fromDate) {
     const raw = r.date_order;
-    console.log('month row:', JSON.stringify(r));
-
+    // 1. "01/2026" format
     if(raw && raw !== false) {
       const s = String(raw);
-      // Format: "MM/YYYY" e.g. "01/2026"
       const mmyyyy = s.match(/^(\d{1,2})\/(\d{4})$/);
-      if(mmyyyy) { label = MO[parseInt(mmyyyy[1])-1]+' '+mmyyyy[2]; }
-      // Format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
-      else if(s.match(/^\d{4}-\d{2}/)) {
+      if(mmyyyy) return MO[parseInt(mmyyyy[1])-1]+' '+mmyyyy[2];
+      // 2. "2026-01-01" or "2026-01-01 00:00:00"
+      if(s.match(/^\d{4}-\d{2}/)) {
         const d = new Date(s.slice(0,10)+'T00:00:00');
-        if(!isNaN(d)) label = MO[d.getMonth()]+' '+d.getFullYear();
+        if(!isNaN(d)) return MO[d.getMonth()]+' '+d.getFullYear();
       }
-      // Format already readable e.g. "January 2026"
-      else { label = s; }
+      // 3. Already "January 2026" style — return as is if not "false"
+      if(s !== 'false' && s.length > 4) return s;
     }
-
-    // Last resort: extract from __domain
-    if(!label && r.__domain) {
-      const dc = r.__domain.find(x=>Array.isArray(x) && x[0]==='date_order' && x[1]==='>=');
-      if(dc) {
-        const d = new Date(String(dc[2]).slice(0,10)+'T00:00:00');
-        if(!isNaN(d)) label = MO[d.getMonth()]+' '+d.getFullYear();
+    // 4. __range.date_order.from (per-row start date)
+    const rf = r.__range?.date_order?.from;
+    if(rf) {
+      const d = new Date(rf.slice(0,10)+'T00:00:00');
+      if(!isNaN(d)) return MO[d.getMonth()]+' '+d.getFullYear();
+    }
+    // 5. __domain row-level >= date (find per-row domain, not filter domain)
+    if(r.__domain) {
+      const rowDates = r.__domain.filter(x=>Array.isArray(x) && x[0]==='date_order');
+      const ge = rowDates.find(x=>x[1]==='>=');
+      if(ge) {
+        const d = new Date(String(ge[2]).slice(0,10)+'T00:00:00');
+        if(!isNaN(d) && d >= new Date(fromDate)) return MO[d.getMonth()]+' '+d.getFullYear();
       }
     }
-
-    return {m: label||`Month ${i+1}`, r: r.amount_untaxed||0};
-  });
+    return null;
+  }
+  // Build months — if all labels fail, calculate from 'from' date + index
+  let months = byMonth.map((r,i)=>({m: parseMonthLabel(r, from), r: r.amount_untaxed||0, i}));
+  // If labels are all the same (fallback failed), generate from 'from' date + i
+  const uniqueLabels = new Set(months.map(m=>m.m).filter(Boolean));
+  if(uniqueLabels.size <= 1) {
+    const base = new Date((from||'2026-01-01')+'T00:00:00');
+    months = months.map((m,i)=>{
+      const d = new Date(base.getFullYear(), base.getMonth()+i, 1);
+      return {...m, m: MO[d.getMonth()]+' '+d.getFullYear()};
+    });
+  }
   console.log('byMonth raw:', JSON.stringify(byMonth.slice(0,2)));
   console.log('months parsed:', JSON.stringify(months.slice(0,2)));
   CH.month=new Chart(document.getElementById('ch-month'),{type:'bar',data:{labels:months.map(m=>m.m),datasets:[{label:'Revenue',data:months.map(m=>m.r),backgroundColor:'#6366f1',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:fmt},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}});
