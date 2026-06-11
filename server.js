@@ -122,6 +122,9 @@ app.post('/ai/claude', aiLimiter, async (req, res) => {
     });
     clearTimeout(timer);
     const data = await response.json();
+    if (!response.ok) {
+      console.error('Anthropic API error:', response.status, JSON.stringify(data));
+    }
     res.json(data);
   } catch(err) {
     if (err.name === 'AbortError') return res.status(504).json({ error: 'AI request timed out.' });
