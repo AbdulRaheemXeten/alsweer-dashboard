@@ -6,7 +6,7 @@ const helmet    = require('helmet');
 
 const app      = express();
 const PORT     = process.env.PORT || 3000;
-const ODOO_URL = process.env.ODOO_URL || 'https://alsweer-staging-2-33171348.dev.odoo.com';
+const ODOO_URL = process.env.ODOO_URL || 'https://alsweer-staging-2-33390707.dev.odoo.com';
 
 // Required for Render (sits behind a load balancer)
 app.set('trust proxy', 1);
