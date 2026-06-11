@@ -1658,7 +1658,8 @@ async function createOdooQuotation() {
 
     const qNum = created?.[0]?.name || `ID ${newId}`;
     const odooBase = 'https://alsweer-staging-2-33390707.dev.odoo.com';
-    const odooLink = `${odooBase}/odoo/sales/${newId}`;
+    // Odoo 18 on odoo.sh — use hash-based URL which works regardless of action slug
+    const odooLink = `${odooBase}/web#action=sale.action_quotations_with_onboarding&view_type=form&id=${newId}&model=sale.order`;
 
     // Show success modal
     document.getElementById('odoo-q-num').textContent = qNum;
