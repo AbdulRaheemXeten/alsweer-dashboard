@@ -1421,40 +1421,46 @@ async function extractItemsWithClaude(text, filePayload) {
       userContent.push({ type: 'text', text: 'Here is the order document content:\n\n' + filePayload.content });
     } else if (filePayload.ext === 'pdf') {
       userContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: filePayload.content } });
-      userContent.push({ type: 'text', text: 'Extract all product/item order lines from this document.' });
+      userContent.push({ type: 'text', text: 'Extract all product/item order lines from the document above.' });
     } else {
-      // For docx/xlsx we send as text fallback note
-      userContent.push({ type: 'text', text: 'The user uploaded a file but it could not be read as PDF. File name: ' + aiFile.name + '. Please note this and ask them to paste the text instead.' });
+      userContent.push({ type: 'text', text: 'The user uploaded a file (' + aiFile.name + ') but it is not a supported format for direct reading. Please tell the user to paste the content as text instead.' });
     }
   } else {
     userContent.push({ type: 'text', text: 'Here is the customer order:\n\n' + text });
   }
 
-  const systemPrompt = `You are a helpful assistant that extracts product order items from customer purchase orders or order messages.
-Extract ALL product items mentioned, including quantity and any description clues.
-Respond ONLY with a JSON array, no markdown, no explanation. Each item: {"description": "full item description as given", "qty": number_or_1_if_unclear}
-Example: [{"description":"Daikin 1.5 ton split AC","qty":5},{"description":"Copper pipe 1/4 inch","qty":10}]
-If no items found, return [].`;
+  // Append the JSON instruction as the last user content item
+  userContent.push({ type: 'text', text: `\nExtract ALL product items from the above. Reply ONLY with a valid JSON array — no markdown, no explanation, no extra text.
+Format: [{"description":"full item text","qty":number}]
+If quantity is unclear use 1. If no items found return [].
+Example output: [{"description":"4CTS-1-300-4L-BR","qty":3},{"description":"Cleaner Rafco","qty":3}]` });
 
   const response = await fetch('/ai/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
-      system: systemPrompt,
       messages: [{ role: 'user', content: userContent }]
     })
   });
 
   const data = await response.json();
-  const raw = data.content?.map(c => c.text || '').join('').trim();
+
+  // Surface any Anthropic API errors clearly
+  if (data.error) throw new Error(typeof data.error === 'string' ? data.error : (data.error.message || JSON.stringify(data.error)));
+  if (data.type === 'error') throw new Error(data.error?.message || 'Anthropic API error');
+
+  const raw = (data.content || []).map(c => c.text || '').join('').trim();
+  if (!raw) throw new Error('AI returned an empty response. Check server logs.');
+
   try {
-    const cleaned = raw.replace(/```json|```/g, '').trim();
+    // Strip any accidental markdown fences
+    const cleaned = raw.replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
     return JSON.parse(cleaned);
   } catch(e) {
-    console.error('Claude parse error:', raw);
-    return [];
+    console.error('Claude JSON parse error. Raw response:', raw);
+    throw new Error('AI response could not be parsed. Raw: ' + raw.slice(0, 200));
   }
 }
 
@@ -1506,8 +1512,8 @@ async function pickBestMatch(description, products) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 50,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 10,
       messages: [{
         role: 'user',
         content: `Customer wants: "${description}"\n\nAvailable products:\n${list}\n\nReply with ONLY the index number (0,1,2…) of the best match. If none are a good match, reply with "0".`
@@ -1515,7 +1521,8 @@ async function pickBestMatch(description, products) {
     })
   });
   const data = await response.json();
-  const idx = parseInt(data.content?.[0]?.text?.trim()) || 0;
+  if (data.error || data.type === 'error') return products[0]; // fallback on error
+  const idx = parseInt((data.content?.[0]?.text || '0').trim()) || 0;
   return products[Math.min(idx, products.length-1)];
 }
 
