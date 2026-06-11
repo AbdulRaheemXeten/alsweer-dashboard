@@ -1436,7 +1436,7 @@ Respond ONLY with a JSON array, no markdown, no explanation. Each item: {"descri
 Example: [{"description":"Daikin 1.5 ton split AC","qty":5},{"description":"Copper pipe 1/4 inch","qty":10}]
 If no items found, return [].`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/ai/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1502,7 +1502,7 @@ async function pickBestMatch(description, products) {
   if (products.length === 1) return products[0];
 
   const list = products.map((p,i)=>`${i}: ${p.name}${p.default_code?' ['+p.default_code+']':''}`).join('\n');
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/ai/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
