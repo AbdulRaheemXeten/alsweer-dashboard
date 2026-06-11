@@ -531,8 +531,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-top:20px">
-          <button class="btn-pdf" onclick="generatePDF()">📄 Download PDF Quotation</button>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn-pdf" onclick="generatePDF()" style="background:linear-gradient(135deg,#374151,#4b5563)">📄 Download PDF</button>
+          <button class="btn-pdf" id="btn-create-odoo" onclick="createOdooQuotation()">🚀 Create Quotation on Odoo</button>
         </div>
       </div>
     </div>
@@ -551,6 +552,23 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
     <div id="m-desc-wrap" style="display:none">
       <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:8px">Description</div>
       <div class="modal-desc" id="m-desc"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Odoo Quotation Created Modal -->
+<div class="modal-bg" id="odoo-success-modal">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🎉</div>
+    <h2 style="margin-bottom:8px">Quotation Created!</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:20px">The quotation has been saved to Odoo successfully.</p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Quotation Number</div>
+      <div style="font-size:22px;font-weight:700;color:#059669" id="odoo-q-num">—</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <a id="odoo-q-link" href="#" target="_blank" style="padding:10px 20px;background:#6366f1;color:#fff;border-radius:9px;font-size:13px;font-weight:600;text-decoration:none">Open in Odoo →</a>
+      <button onclick="document.getElementById('odoo-success-modal').classList.remove('open')" style="padding:10px 20px;background:#f3f4f6;color:#374151;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Close</button>
     </div>
   </div>
 </div>
@@ -1534,6 +1552,125 @@ async function pickBestMatch(description, products) {
   if (data.error || data.type === 'error') return products[0]; // fallback on error
   const idx = parseInt((data.content?.[0]?.text || '0').trim()) || 0;
   return products[Math.min(idx, products.length-1)];
+}
+
+// ══════════════════════════════════════════════════════════════
+// CREATE QUOTATION ON ODOO
+// ══════════════════════════════════════════════════════════════
+async function createOdooQuotation() {
+  // Validate form
+  if (!selCust) { alert('Please select a customer first.'); return; }
+
+  const lines = qLines.map(l => ({
+    ...l,
+    qty:   parseFloat(document.getElementById(`qqty-${l.id}`)?.value   || l.qty)   || 1,
+    price: parseFloat(document.getElementById(`qprice-${l.id}`)?.value || l.price) || 0,
+  })).filter(l => l.productId && l.productName);
+
+  if (!lines.length) { alert('Please add at least one product line.'); return; }
+
+  const btn = document.getElementById('btn-create-odoo');
+  btn.disabled = true;
+  btn.textContent = '⏳ Creating…';
+
+  try {
+    // ── Step 1: Check create access on sale.order ──────────────
+    let canCreate = false;
+    try {
+      const access = await rpc('/web/dataset/call_kw', {
+        model: 'sale.order',
+        method: 'check_access_rights',
+        args: ['create'],
+        kwargs: { raise_exception: false }
+      });
+      canCreate = access === true;
+    } catch(e) {
+      canCreate = false;
+    }
+
+    if (!canCreate) {
+      alert('⛔ Access Denied\n\nYour Odoo account does not have permission to create quotations (sale.order). Please ask your administrator to grant Sales / User access.');
+      return;
+    }
+
+    // ── Step 2: Resolve product.product IDs from product.template IDs ──
+    // sale.order.line needs product.product (variant), not product.template
+    const templateIds = [...new Set(lines.map(l => l.productId))];
+    const variants = await rpc('/web/dataset/call_kw', {
+      model: 'product.product',
+      method: 'search_read',
+      args: [],
+      kwargs: {
+        domain: [['product_tmpl_id', 'in', templateIds], ['active', '=', true]],
+        fields: ['id', 'product_tmpl_id'],
+        limit: 200
+      }
+    });
+
+    // Map template id → first variant id
+    const tmplToVariant = {};
+    for (const v of variants) {
+      const tid = Array.isArray(v.product_tmpl_id) ? v.product_tmpl_id[0] : v.product_tmpl_id;
+      if (!tmplToVariant[tid]) tmplToVariant[tid] = v.id;
+    }
+
+    // ── Step 3: Build order vals ───────────────────────────────
+    const qDate  = document.getElementById('q-date').value;
+    const qValid = document.getElementById('q-valid').value;
+    const notes  = document.getElementById('q-notes').value.trim();
+
+    const orderVals = {
+      partner_id:        selCust,
+      date_order:        qDate ? qDate + ' 00:00:00' : false,
+      validity_date:     qValid || false,
+      note:              notes || false,
+      order_line: lines.map(l => {
+        const variantId = tmplToVariant[l.productId];
+        if (!variantId) throw new Error(`No product variant found for: ${l.productName}`);
+        return [0, 0, {
+          product_id:        variantId,
+          product_uom_qty:   l.qty,
+          price_unit:        l.price,
+        }];
+      }),
+    };
+
+    // Add company if selected
+    if (selQCo) orderVals.company_id = selQCo;
+
+    // ── Step 4: Create the sale.order ─────────────────────────
+    const newId = await rpc('/web/dataset/call_kw', {
+      model:  'sale.order',
+      method: 'create',
+      args:   [orderVals],
+      kwargs: {}
+    });
+
+    if (!newId) throw new Error('Odoo returned no ID — quotation may not have been created.');
+
+    // ── Step 5: Read back the quotation number ─────────────────
+    const created = await rpc('/web/dataset/call_kw', {
+      model:  'sale.order',
+      method: 'read',
+      args:   [[newId], ['name']],
+      kwargs: {}
+    });
+
+    const qNum = created?.[0]?.name || `ID ${newId}`;
+    const odooBase = 'https://alsweer-staging-2-33390707.dev.odoo.com';
+    const odooLink = `${odooBase}/odoo/sales/${newId}`;
+
+    // Show success modal
+    document.getElementById('odoo-q-num').textContent = qNum;
+    document.getElementById('odoo-q-link').href = odooLink;
+    document.getElementById('odoo-success-modal').classList.add('open');
+
+  } catch(e) {
+    alert('Failed to create quotation:\n\n' + (e.message || 'Unknown error'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Create Quotation on Odoo';
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
