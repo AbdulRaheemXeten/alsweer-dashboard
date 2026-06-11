@@ -25,7 +25,7 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Login rate limiter — strict
@@ -91,6 +91,42 @@ app.get('/odoo/dbname', async (req, res) => {
   } catch(e) {
     const host = ODOO_URL.replace('https://', '').split('.')[0];
     res.json({ result: [host] });
+  }
+});
+
+// ── Claude AI proxy ──
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Too many AI requests. Please wait a moment.' }
+});
+
+app.post('/ai/claude', aiLimiter, async (req, res) => {
+  if (!ANTHROPIC_KEY) {
+    return res.status(503).json({ error: 'AI feature not configured. Set ANTHROPIC_API_KEY on the server.' });
+  }
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(req.body),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const data = await response.json();
+    res.json(data);
+  } catch(err) {
+    if (err.name === 'AbortError') return res.status(504).json({ error: 'AI request timed out.' });
+    console.error('Claude proxy error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
