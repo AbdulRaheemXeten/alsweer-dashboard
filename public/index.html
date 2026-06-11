@@ -232,23 +232,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
 .btn-ai-clear:hover{background:#f9fafb}
 .ai-status{font-size:12px;color:#6b7280;display:flex;align-items:center;gap:6px}
 .ai-status .spinner{width:14px;height:14px;border-width:2px;margin:0}
-.ai-results{margin-top:16px;display:none}
-.ai-results-title{font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.ai-result-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:8px;border:1.5px solid #e5e7eb;background:#fafafa;transition:all .15s}
-.ai-result-item.matched{border-color:#bbf7d0;background:#f0fdf4}
-.ai-result-item.unmatched{border-color:#fed7aa;background:#fff7ed}
-.ai-result-item.added{border-color:#bfdbfe;background:#eff6ff;opacity:.65}
-.ai-ri-parsed{flex:1;min-width:0}
-.ai-ri-raw{font-size:12px;font-weight:600;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ai-ri-qty{font-size:11px;color:#6b7280;margin-top:1px}
-.ai-ri-match{flex:1;min-width:0}
-.ai-ri-mname{font-size:12px;font-weight:600;color:#059669;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ai-ri-mprice{font-size:11px;color:#6b7280;margin-top:1px}
-.ai-ri-noname{font-size:12px;color:#d97706;font-style:italic}
-.btn-ai-add{padding:5px 12px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
-.btn-ai-add:hover{background:#4f46e5}
-.btn-ai-add:disabled{background:#a5b4fc;cursor:not-allowed}
-.ai-add-all-row{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
 .btn-ai-add-all{padding:9px 20px;background:#10b981;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
 .btn-ai-add-all:hover{background:#059669}
 
@@ -523,24 +506,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#f9fafb}
               </div>
             </div>
             <div class="ai-actions">
-              <button class="btn-ai-run" id="btn-ai-run" onclick="runAIImport()">✨ Find Products</button>
+              <button class="btn-ai-run" id="btn-ai-run" onclick="runAIImport()">✨ Generate Lines</button>
               <button class="btn-ai-clear" onclick="clearAIImport()">Clear</button>
               <div class="ai-status" id="ai-status" style="display:none">
                 <div class="spinner"></div>
                 <span id="ai-status-text">Analysing order…</span>
               </div>
             </div>
-            <div class="ai-results" id="ai-results">
-              <div class="ai-results-title">
-                <span id="ai-results-count"></span>
-              </div>
-              <div id="ai-results-list"></div>
-              <div class="ai-add-all-row" id="ai-add-all-row" style="display:none">
-                <button class="btn-ai-add-all" onclick="addAllMatched()">✅ Add All Matched to Quotation</button>
-              </div>
-            </div>
           </div>
           <!-- END AI PANEL -->
+
+          <!-- UNMATCHED WARNING STRIP -->
+          <div id="ai-unmatched-strip" style="display:none;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px">⚠️ Could not find these items in the product catalog — please add manually:</div>
+            <div id="ai-unmatched-list" style="font-size:12px;color:#b45309;line-height:1.8"></div>
+          </div>
           <div style="display:grid;grid-template-columns:2fr 1fr 1fr 36px;gap:8px;padding:0 0 6px;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">
             <span>Product</span><span>Unit Price</span><span>Qty</span><span></span>
           </div>
@@ -1237,8 +1217,9 @@ function renderLines() {
           style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;width:100%;outline:none;font-family:inherit"/>
         <div class="q-pdrop" id="qpdrop-${l.id}"></div>
       </div>
-      <input type="number" value="${l.price}" id="qprice-${l.id}" readonly
-        style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#f9fafb;color:#374151;outline:none"/>
+      <input type="number" value="${l.price.toFixed(2)}" id="qprice-${l.id}" min="0" step="0.01"
+        oninput="updatePrice(${l.id},this.value)"
+        style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;outline:none;font-family:inherit"/>
       <input type="number" value="${l.qty}" min="1" id="qqty-${l.id}"
         oninput="updateQty(${l.id},this.value)"
         style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit"/>
@@ -1276,13 +1257,22 @@ function selectQProduct(lid, pid, name, price, uom) {
   calcTotals();
 }
 
+function updatePrice(lid, val) {
+  const line=qLines.find(l=>l.id===lid);
+  if(line) { line.price=parseFloat(val)||0; calcTotals(); }
+}
+
 function updateQty(lid, val) {
   const line=qLines.find(l=>l.id===lid);
   if(line) { line.qty=parseFloat(val)||1; calcTotals(); }
 }
 
 function calcTotals() {
-  const sub = qLines.reduce((s,l)=>s+(l.price*(parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty))||0),0);
+  const sub = qLines.reduce((s,l)=>{
+    const price = parseFloat(document.getElementById(`qprice-${l.id}`)?.value||l.price)||0;
+    const qty   = parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty)||1;
+    return s + price*qty;
+  },0);
   document.getElementById('q-subtotal').textContent = sub.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('q-total').textContent = sub.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
@@ -1337,7 +1327,7 @@ function clearAIFile() {
 function clearAIImport() {
   document.getElementById('ai-text-input').value='';
   clearAIFile();
-  document.getElementById('ai-results').style.display='none';
+  document.getElementById('ai-unmatched-strip').style.display='none';
   aiResults=[];
 }
 
@@ -1380,17 +1370,16 @@ async function runAIImport() {
 
   const btn = document.getElementById('btn-ai-run');
   btn.disabled = true;
-  document.getElementById('ai-results').style.display='none';
+  // Hide previous unmatched strip
+  document.getElementById('ai-unmatched-strip').style.display='none';
   setAIStatus('Reading order…');
 
   try {
-    // Step 1: Read file if needed
     if (aiFile) {
       setAIStatus('Reading file…');
       filePayload = await readFileContent(aiFile);
     }
 
-    // Step 2: Ask Claude to extract product items from the order
     setAIStatus('Analysing order with AI…');
     const extractedItems = await extractItemsWithClaude(orderText, filePayload);
     if (!extractedItems.length) {
@@ -1398,12 +1387,33 @@ async function runAIImport() {
       return;
     }
 
-    // Step 3: For each item, search Odoo for best match
     setAIStatus(`Matching ${extractedItems.length} items against Odoo products…`);
-    const matched = await matchItemsToOdoo(extractedItems);
+    const results = await matchItemsToOdoo(extractedItems);
 
-    aiResults = matched;
-    renderAIResults(matched);
+    // Directly add matched products to quotation lines
+    const matched   = results.filter(r => r.status === 'matched');
+    const unmatched = results.filter(r => r.status === 'unmatched');
+
+    for (const r of matched) {
+      const p = r.matched;
+      const id = ++lineId;
+      qLines.push({ id, productId:p.id, productName:p.name, price:p.list_price||0, uom:p.uom_id?p.uom_id[1]:'', qty:r.qty });
+    }
+    renderLines();
+
+    // Show unmatched warning strip
+    if (unmatched.length) {
+      document.getElementById('ai-unmatched-list').innerHTML =
+        unmatched.map(r=>`• <strong>${r.description}</strong> (qty: ${r.qty})`).join('<br>');
+      document.getElementById('ai-unmatched-strip').style.display='block';
+    }
+
+    // Collapse panel after success
+    if (matched.length) {
+      document.getElementById('ai-panel').classList.remove('open');
+    }
+
+    aiResults = results;
 
   } catch(e) {
     alert('Error: ' + (e.message || 'Something went wrong'));
@@ -1526,59 +1536,6 @@ async function pickBestMatch(description, products) {
   return products[Math.min(idx, products.length-1)];
 }
 
-function renderAIResults(results) {
-  const matched = results.filter(r=>r.status==='matched');
-  const unmatched = results.filter(r=>r.status==='unmatched');
-
-  document.getElementById('ai-results-count').innerHTML =
-    `Found <strong>${results.length}</strong> items — ` +
-    `<span style="color:#059669">${matched.length} matched</span>` +
-    (unmatched.length ? `, <span style="color:#d97706">${unmatched.length} not found</span>` : '');
-
-  document.getElementById('ai-results-list').innerHTML = results.map((r,i)=>`
-    <div class="ai-result-item ${r.status}" id="ai-ri-${i}">
-      <div class="ai-ri-parsed">
-        <div class="ai-ri-raw">📋 ${r.description}</div>
-        <div class="ai-ri-qty">Qty: ${r.qty}</div>
-      </div>
-      <div style="color:#d1d5db;font-size:18px">→</div>
-      <div class="ai-ri-match" style="flex:2">
-        ${r.matched
-          ? `<div class="ai-ri-mname">✅ ${r.matched.name}</div>
-             <div class="ai-ri-mprice">${r.matched.default_code?r.matched.default_code+' · ':''}AED ${(r.matched.list_price||0).toFixed(2)} · ${r.matched.uom_id?r.matched.uom_id[1]:''}</div>`
-          : `<div class="ai-ri-noname">⚠️ No match found in catalog</div>`
-        }
-      </div>
-      ${r.matched
-        ? `<button class="btn-ai-add" id="btn-add-${i}" onclick="addSingleResult(${i})">Add</button>`
-        : `<button class="btn-ai-add" style="background:#e5e7eb;color:#9ca3af;cursor:not-allowed" disabled>—</button>`
-      }
-    </div>`).join('');
-
-  document.getElementById('ai-results').style.display='block';
-  document.getElementById('ai-add-all-row').style.display = matched.length ? 'flex' : 'none';
-}
-
-function addSingleResult(idx) {
-  const r = aiResults[idx];
-  if (!r?.matched) return;
-  const p = r.matched;
-  const id = ++lineId;
-  qLines.push({ id, productId:p.id, productName:p.name, price:p.list_price||0, uom:p.uom_id?p.uom_id[1]:'', qty:r.qty });
-  renderLines();
-  // Mark as added
-  const btn = document.getElementById(`btn-add-${idx}`);
-  const item = document.getElementById(`ai-ri-${idx}`);
-  if(btn){ btn.disabled=true; btn.textContent='✓ Added'; }
-  if(item){ item.classList.add('added'); }
-}
-
-function addAllMatched() {
-  aiResults.forEach((r,i) => {
-    if (r.matched) addSingleResult(i);
-  });
-}
-
 // ══════════════════════════════════════════════════════════════
 // PDF GENERATION
 // ══════════════════════════════════════════════════════════════
@@ -1594,9 +1551,9 @@ function generatePDF() {
 
   // Collect current lines
   const lines = qLines.map(l=>{
-    const qty = parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty)||1;
-    const price = l.price||0;
-    return {...l, qty, total: qty*price};
+    const qty   = parseFloat(document.getElementById(`qqty-${l.id}`)?.value||l.qty)||1;
+    const price = parseFloat(document.getElementById(`qprice-${l.id}`)?.value||l.price)||0;
+    return {...l, qty, price, total: qty*price};
   }).filter(l=>l.productName);
 
   if(!lines.length) { alert('Please select products for the lines.'); return; }
